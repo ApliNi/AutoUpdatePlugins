@@ -1,6 +1,6 @@
 [postbg]bg5.png[/postbg][markdown]
 
-https://github.com/ApliNi/useTranslatedNames
+https://github.com/ApliNi/AutoUpdatePlugins
 
 ---
 
