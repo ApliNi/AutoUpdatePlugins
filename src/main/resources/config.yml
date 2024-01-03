@@ -25,6 +25,9 @@ ignoreDuplicates: true
 # 全局禁用证书验证, 修改后需要重启
 disableCertificateVerification: false
 
+# 显示最详细的更新日志, 可在测试完成后关闭, 关闭后依然显示错误/警告/开始和完成信息
+debugLog: true
+
 # 隐藏配置, 无需修改
 #disableLook: false
 #disableUpdateCheckIntervalTooLow: false

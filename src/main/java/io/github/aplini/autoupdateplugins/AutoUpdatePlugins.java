@@ -38,6 +38,7 @@ import java.util.zip.ZipException;
 
 public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
     public boolean lock = false;
+    public boolean debugLog = true;
 
     @Override
     public void onEnable() {
@@ -50,6 +51,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         if(getConfig().getBoolean("bStats", true)){
             new Metrics(this, 20629);
         }
+
+        debugLog = getConfig().getBoolean("debugLog", true);
 
         // 禁用证书验证
         if(getConfig().getBoolean("disableCertificateVerification", false)) {
@@ -154,7 +157,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             // 新线程
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.submit(() -> {
-//                getLogger().info("开始运行");
+                getLogger().info("开始运行自动更新");
 
                 List<Map<?, ?>> list = (List<Map<?, ?>>) getConfig().get("list");
                 if(list == null){
@@ -185,7 +188,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     boolean pluginFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
 
                     // 下载文件到缓存目录
-                    getLogger().info(_nowFile +"正在更新...");
+                    outInfo("正在更新...");
                     if(!downloadFile(getFileUrl(url, getMatchFileName), tempPath)){
                         getLogger().warning(_nowFile +"下载文件时出现异常");
                         new File(tempPath).delete();
@@ -204,7 +207,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
                     String tempFileHas = fileHash(tempPath);
                     if(Objects.equals(tempFileHas, fileHash(updatePath)) || Objects.equals(tempFileHas, fileHash(filePath))){
-                        getLogger().info(_nowFile +"文件已是最新版本");
+                        outInfo("文件已是最新版本");
                         new File(tempPath).delete();
                         continue;
                     }
@@ -216,7 +219,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(e.getMessage());
                     }
 
-//                    getLogger().info(_nowFile +"更新完成");
+                    outInfo("更新完成");
                     _nowFile = "[???] ";
                 }
                 getLogger().info("更新全部完成, 耗时 "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
@@ -285,7 +288,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("name");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("browser_download_url");
-                            getLogger().info(_nowFile +"[Github] 找到版本: "+ dUrl);
+                            outInfo("[Github] 找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
@@ -303,7 +306,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String fileName = (String) li.get("fileName");
                     if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                         String dUrl = url +"/lastSuccessfulBuild/artifact/"+ li.get("relativePath");
-                        getLogger().info(_nowFile +"[Jenkins] 找到版本: "+ dUrl);
+                        outInfo("[Jenkins] 找到版本: "+ dUrl);
                         return dUrl;
                     }
                 }
@@ -314,7 +317,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 Matcher matcher = Pattern.compile("\\.([0-9]+)$").matcher(url);
                 if(matcher.find()){
                     String dUrl = "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
-                    getLogger().info(_nowFile +"[Spigot] 找到版本: "+ dUrl);
+                    outInfo("[Spigot] 找到版本: "+ dUrl);
                     return dUrl;
                 }
                 getLogger().warning(_nowFile +"[Spigot] 无法从URL中提取直链: "+ url);
@@ -332,7 +335,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("filename");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("url");
-                            getLogger().info(_nowFile +"[Modrinth] 找到版本: "+ dUrl);
+                            outInfo("[Modrinth] 找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
@@ -341,12 +344,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
             else if(url.contains("://dev.bukkit.org/")){ // Bukkit 页面
                 String dUrl = url +"/files/latest";
-                getLogger().info(_nowFile +"[Bukkit] 找到版本: "+ dUrl);
+                outInfo("[Bukkit] 找到版本: "+ dUrl);
                 return dUrl;
             }
 
             // 没有匹配的项
-            getLogger().info(_nowFile +"[URL] "+ _url);
+            outInfo("[URL] "+ _url);
             return _url;
         }
 
@@ -392,6 +395,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 getLogger().warning("[HTTP] "+ e.getMessage());
             }
             return null;
+        }
+
+        // 在插件更新过程中输出尽可能详细的日志
+        public void outInfo(String t) {
+            if(debugLog){
+                getLogger().info(_nowFile + t);
+            }
         }
     }
 }
