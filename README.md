@@ -23,7 +23,7 @@
 - [ ] 支持更新时运行系统命令
 
 
-[[使用量统计]]([bStats](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629))
+[[使用量统计]](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629)
 <a href="https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629">![](https://bstats.org/signatures/bukkit/ApliNi-AutoUpdatePlugins.svg)</a>
 
 
