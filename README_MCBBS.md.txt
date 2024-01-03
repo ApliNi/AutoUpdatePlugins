@@ -1,3 +1,9 @@
+[postbg]bg5.png[/postbg][markdown]
+
+https://github.com/ApliNi/useTranslatedNames
+
+---
+
 ## AutoUpdatePlugins `v1.0`
 更好的自动更新插件
 
@@ -21,10 +27,6 @@
 - [x] 每个插件的单独配置
 - [x] 可配置的证书验证
 - [ ] 支持更新时运行系统命令
-
-
-[[使用量统计]]([bStats](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629))
-<a href="https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629">![](https://bstats.org/signatures/bukkit/ApliNi-AutoUpdatePlugins.svg)</a>
 
 
 ### 配置
@@ -103,3 +105,12 @@ list:
 
 ```
 
+
+
+---
+
+### MCBBS
+本插件所用所有代码均为原创,不存在借用/抄袭等行为
+本插件为非盈利性插件，免费发布，严禁销售和转卖
+
+[/markdown]
