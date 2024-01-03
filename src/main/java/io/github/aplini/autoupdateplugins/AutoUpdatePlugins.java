@@ -1,10 +1,17 @@
 package io.github.aplini.autoupdateplugins;
 
 import com.google.gson.Gson;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -29,7 +36,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipException;
 
 
-public final class AutoUpdatePlugins extends JavaPlugin implements Listener {
+public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
     public boolean lock = false;
 
     @Override
@@ -88,6 +95,48 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener {
             timer.schedule(new updatePlugins(), startupDelay * 1000, startupCycle * 1000);
             getLogger().info("更新检查将在 "+ startupDelay +" 秒后运行, 并以每 "+ startupCycle +" 秒的间隔重复运行");
         });
+    }
+
+    @Override // 运行指令
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+        // 默认输出插件信息
+        if(args.length == 0){
+            sender.sendMessage("IpacEL > AutoUpdatePlugins: 自动更新插件");
+            sender.sendMessage("  指令: ");
+            sender.sendMessage("    - /aup reload - 重载配置");
+            sender.sendMessage("    - /aup update - 运行更新");
+            return true;
+        }
+
+        // 重载配置
+        else if(args[0].equals("reload")){
+            reloadConfig();
+            sender.sendMessage("[AUP] 已完成重载, 部分配置需要重启才能应用");
+            return true;
+        }
+
+        // 调试模式
+        else if(args[0].equals("update")){
+            if(lock && !getConfig().getBoolean("disableLook", false)){
+                sender.sendMessage("[AUP] 已有一个未完成的更新正在运行");
+                return true;
+            }
+            sender.sendMessage("[AUP] 更新开始运行!");
+            new updatePlugins();
+            return true;
+        }
+        return false;
+    }
+
+    @Override // 指令补全
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+        if (args.length == 1) {
+            return  List.of(
+                    "reload",   // 重载插件
+                    "update"    // 运行更新
+            );
+        }
+        return null;
     }
 
     private class updatePlugins extends TimerTask {
