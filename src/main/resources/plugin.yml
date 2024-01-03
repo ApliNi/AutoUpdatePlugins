@@ -1,0 +1,16 @@
+name: AutoUpdatePlugins
+version: '${project.version}'
+main: io.github.aplini.autoupdateplugins.AutoUpdatePlugins
+api-version: '1.20'
+prefix: AUP
+author: ApliNi
+
+commands:
+  aup:
+    description: 使用插件命令
+    permission: aup.command
+
+permissions:
+  aup.command:
+    description: 使用插件命令
+    default: op
