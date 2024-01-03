@@ -105,6 +105,7 @@ list:
 
 ```
 
+一些功能和代码参考了项目 [NewAmazingPVP/AutoUpdatePlugins](https://github.com/NewAmazingPVP/AutoUpdatePlugins).
 
 
 ---
