@@ -85,7 +85,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         // 异步
         CompletableFuture.runAsync(() -> {
             long startupDelay = getConfig().getLong("startupDelay", 64);
-            long startupCycle = getConfig().getLong("startupCycle", 1440);
+            long startupCycle = getConfig().getLong("startupCycle", 61200);
             // 检查更新间隔是否过低
             if(startupCycle < 256 && !getConfig().getBoolean("disableUpdateCheckIntervalTooLow", false)){
                 getLogger().warning("### 更新检查间隔过低将造成性能问题! ###");

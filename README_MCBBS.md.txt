@@ -40,7 +40,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
 startupDelay: 64
 
 # 第一次运行完成后以此频率重复运行更新 (秒, 修改后需要重启
-startupCycle: 14400 # 4小时
+startupCycle: 61200 # 17小时
 
 # 插件更新目录, 设置与 bukkit.yml 中的一致
 # 注意路径最后一定是 "/"
