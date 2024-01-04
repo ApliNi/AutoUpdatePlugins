@@ -141,8 +141,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     }
 
     private class updatePlugins extends TimerTask {
-        String _nowFile = "[???] ";
-        long _startTime;
+        String _nowFile = "[???] "; // 当前文件的名称
+        long _startTime;            // 最终耗时
+        float _allFileSize;          // 已下载的文件大小合计
 
         // 在这里存放当前插件的配置
         String c_file;              // 文件名称
@@ -205,6 +206,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         continue;
                     }
 
+                    // 记录文件大小
+                    float fileSize = new File(c_tempPath).length();
+                    _allFileSize += fileSize;
+
                     // 文件完整性检查
                     if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
                         getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新");
@@ -216,11 +221,15 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
                     String tempFileHas = fileHash(c_tempPath);
-                    if(Objects.equals(tempFileHas, fileHash(c_updatePath)) || Objects.equals(tempFileHas, fileHash(c_filePath))){
+                    String updatePathFileHas = fileHash(c_updatePath);
+                    if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
                         new File(c_tempPath).delete();
                         continue;
                     }
+
+                    // 获取旧版本的文件大小
+                    long oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_tempPath).length();
 
                     // 移动到更新目录
                     try {
@@ -229,10 +238,20 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(e.getMessage());
                     }
 
-                    outInfo("更新完成");
+                    // 更新完成, 并显示文件大小差异
+                    float sizeDiff = fileSize - oldFileSize;
+                    if(sizeDiff > 0){
+                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本增加 "+ Math.round(sizeDiff / 1048576) +"MB");
+                    }else{
+                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本减少 "+ Math.round(sizeDiff / 1048576) +"MB");
+                    }
+
                     _nowFile = "[???] ";
                 }
-                getLogger().info("更新全部完成, 耗时 "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
+                getLogger().info("更新全部完成, 耗时 "+
+                        Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒, 共下载 "+
+                        Math.round(_allFileSize / 1048576) +"MB 的文件");
+                _allFileSize = 0;
                 lock = false;
             });
             executor.shutdown();
