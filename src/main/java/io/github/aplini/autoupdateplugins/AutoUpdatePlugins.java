@@ -1,12 +1,10 @@
 package io.github.aplini.autoupdateplugins;
 
 import com.google.gson.Gson;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
@@ -67,7 +65,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
             };
             // 获取默认的 SSLContext
-            SSLContext sslContext = null;
+            SSLContext sslContext;
             try {
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
@@ -94,9 +92,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 startupCycle = 512;
             }
             // 计时器
+            getLogger().info("更新检查将在 "+ startupDelay +" 秒后运行, 并以每 "+ startupCycle +" 秒的间隔重复运行");
             Timer timer = new Timer();
             timer.schedule(new updatePlugins(), startupDelay * 1000, startupCycle * 1000);
-            getLogger().info("更新检查将在 "+ startupDelay +" 秒后运行, 并以每 "+ startupCycle +" 秒的间隔重复运行");
         });
     }
 
@@ -125,7 +123,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 return true;
             }
             sender.sendMessage("[AUP] 更新开始运行!");
-            new updatePlugins();
+            new Timer().schedule(new updatePlugins(), 0);
             return true;
         }
         return false;
@@ -146,6 +144,16 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         String _nowFile = "[???] ";
         long _startTime;
 
+        // 在这里存放当前插件的配置
+        String c_file;              // 文件名称
+        String c_url;               // 下载链接
+        String c_tempPath;          // 下载缓存路径, 默认使用全局配置
+        String c_updatePath;        // 更新存放路径, 默认使用全局配置
+        String c_filePath;          // 最终安装路径, 默认使用全局配置
+        String c_get;               // 选择发行版本的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
+        boolean c_zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+        boolean c_getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
+
         public void run() {
             // 防止重复运行
             if(lock && !getConfig().getBoolean("disableLook", false)){
@@ -159,62 +167,64 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             executor.submit(() -> {
                 getLogger().info("开始运行自动更新");
 
-                List<Map<?, ?>> list = (List<Map<?, ?>>) getConfig().get("list");
+                List<?> list = (List<?>) getConfig().get("list");
                 if(list == null){
                     getLogger().warning("更新列表配置错误? ");
                     return;
                 }
 
-                for(Map<?, ?> li : list){
+                for(Object _li : list){
+                    Map<?, ?> li = (Map<?, ?>) _li;
                     if(li == null){
                         getLogger().warning("更新列表配置错误? 项目为空");
                         continue;
                     }
 
                     // 检查基础配置
-                    String fileName = (String) SEL(li.get("file"), "");
-                    String url = (String) SEL(li.get("url"), "");
-                    if(fileName.isEmpty() || url.isEmpty()){
+                    c_file = (String) SEL(li.get("file"), "");
+                    c_url = (String) SEL(li.get("url"), "");
+                    if(c_file.isEmpty() || c_url.isEmpty()){
                         getLogger().warning("更新列表配置错误? 缺少基本配置");
                         continue;
                     }
-                    _nowFile = "["+ fileName +"] ";
-                    String tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + fileName;
+                    _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
+                    c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
 
                     // 每个单独的配置
-                    String filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + fileName;
-                    String updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + fileName;
-                    String getMatchFileName = (String) SEL(li.get("get"), "");
-                    boolean pluginFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
+                    c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
+                    c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
+                    c_get = (String) SEL(li.get("get"), "");
+                    c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
+                    c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
 
                     // 下载文件到缓存目录
                     outInfo("正在更新...");
-                    if(!downloadFile(getFileUrl(url, getMatchFileName), tempPath)){
+                    if(!downloadFile(getFileUrl(c_url, c_get), c_tempPath)){
                         getLogger().warning(_nowFile +"下载文件时出现异常");
-                        new File(tempPath).delete();
+                        new File(c_tempPath).delete();
                         continue;
                     }
 
                     // 文件完整性检查
-                    if(!isJARFileIntact(tempPath, pluginFileCheck)){
-                        getLogger().warning(_nowFile +"[完整性检查] 文件可能不完整: "+ url);
-                        new File(tempPath).delete();
+                    if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
+                        getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新");
+                        new File(c_tempPath).delete();
                         continue;
                     }
 
                     // 在这里实现运行系统命令的功能
 
                     // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
-                    String tempFileHas = fileHash(tempPath);
-                    if(Objects.equals(tempFileHas, fileHash(updatePath)) || Objects.equals(tempFileHas, fileHash(filePath))){
+                    String tempFileHas = fileHash(c_tempPath);
+                    if(Objects.equals(tempFileHas, fileHash(c_updatePath)) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
-                        new File(tempPath).delete();
+                        new File(c_tempPath).delete();
                         continue;
                     }
 
                     // 移动到更新目录
                     try {
-                        Files.move(Path.of(tempPath), Path.of(updatePath), StandardCopyOption.REPLACE_EXISTING);
+                        Files.move(Path.of(c_tempPath), Path.of(c_updatePath), StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         getLogger().warning(e.getMessage());
                     }
@@ -242,9 +252,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         }
 
         // 尝试打开 jar 文件以判断文件是否完整
-        public boolean isJARFileIntact(String filePath, boolean Enable) {
+        public boolean isJARFileIntact(String filePath) {
             // 是否启用完整性检查
-            if(getConfig().getBoolean("zipFileCheck", true) && Enable){
+            if(getConfig().getBoolean("zipFileCheck", true)){
                 try {
                     JarFile jarFile = new JarFile(new File(filePath));
                     jarFile.close();
@@ -280,11 +290,22 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 // 获取路径 "/ApliNi/Chat2QQ"
                 Matcher matcher = Pattern.compile("/([^/]+)/([^/]+)$").matcher(url);
                 if(matcher.find()){
-                    String data = httpGet("https://api.github.com/repos" + matcher.group(0) + "/releases/latest");
-                    Map<?, ?> map = new Gson().fromJson(data, HashMap.class); // 解析 JSON
+                    String data;
+                    Map<?, ?> map;
+                    // 是否允许下载预发布
+                    if(c_getPreRelease){
+                        // 获取所有发布中的第一个版本
+                        data = httpGet("https://api.github.com/repos" + matcher.group(0) + "/releases");
+                        map = (Map<?, ?>) new Gson().fromJson(data, ArrayList.class).get(0);
+                    }else{
+                        // 获取一个最新版本
+                        data = httpGet("https://api.github.com/repos" + matcher.group(0) + "/releases/latest");
+                        map = new Gson().fromJson(data, HashMap.class);
+                    }
                     // 遍历发布文件列表
-                    ArrayList<Map<?, ?>> assets = (ArrayList<Map<?, ?>>) map.get("assets");
-                    for(Map<?, ?> li : assets){
+                    ArrayList<?> assets = (ArrayList<?>) map.get("assets");
+                    for(Object _li : assets){
+                        Map<?, ?> li = (Map<?, ?>) _li;
                         String fileName = (String) li.get("name");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("browser_download_url");
@@ -300,9 +321,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 // https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/ViaBackwards-4.10.0-23w51b-SNAPSHOT.jar
                 String data = httpGet(url +"/lastSuccessfulBuild/api/json");
                 Map<?, ?> map = new Gson().fromJson(data, HashMap.class);
-                ArrayList<Map<?, ?>> artifacts = (ArrayList<Map<?, ?>>) map.get("artifacts");
+                ArrayList<?> artifacts = (ArrayList<?>) map.get("artifacts");
                 // 遍历发布文件列表
-                for(Map<?, ?> li : artifacts){
+                for(Object _li : artifacts){
+                    Map<?, ?> li = (Map<?, ?> ) _li;
                     String fileName = (String) li.get("fileName");
                     if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                         String dUrl = url +"/lastSuccessfulBuild/artifact/"+ li.get("relativePath");
@@ -328,10 +350,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 if(matcher.find()) {
                     String data = httpGet("https://api.modrinth.com/v2/project"+ matcher.group(0) +"/version");
                     // 0 为最新的一个版本
-                    Map<?, ?> map = ((ArrayList<Map<?, ?>>) new Gson().fromJson(data, ArrayList.class)).get(0);
-                    ArrayList<Map<?, ?>> files = (ArrayList<Map<?, ?>>) map.get("files");
+                    Map<?, ?> map = (Map<?, ?>) ((ArrayList<?>) new Gson().fromJson(data, ArrayList.class)).get(0);
+                    ArrayList<?> files = (ArrayList<?>) map.get("files");
+
                     // 遍历发布文件列表
-                    for(Map<?, ?> li : files){
+                    for(Object _li : files){
+                        Map<?, ?> li = (Map<?, ?>) _li;
                         String fileName = (String) li.get("filename");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("url");
