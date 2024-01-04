@@ -150,7 +150,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         String c_tempPath;          // 下载缓存路径, 默认使用全局配置
         String c_updatePath;        // 更新存放路径, 默认使用全局配置
         String c_filePath;          // 最终安装路径, 默认使用全局配置
-        String c_get;               // 选择发行版本的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
+        String c_get;               // 查找单个文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
         boolean c_zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
         boolean c_getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
 

@@ -118,7 +118,7 @@ list:
 #  String tempPath;          // 下载缓存路径, 默认使用全局配置
 #  String updatePath;        // 更新存放路径, 默认使用全局配置
 #  String filePath;          // 最终安装路径, 默认使用全局配置
-#  String get;               // 选择发行版本的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
+#  String get;               // 查找单个文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
 #  boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
 #  boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
 
