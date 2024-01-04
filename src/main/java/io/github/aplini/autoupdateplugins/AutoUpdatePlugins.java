@@ -35,13 +35,14 @@ import java.util.zip.ZipException;
 
 
 public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
-    public boolean lock = false;
-    public boolean debugLog = true;
+    boolean lock = false;
+    boolean debugLog = true;
+    Timer timer = null;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        reloadConfig();
+        loadConfig();
         getServer().getPluginManager().registerEvents(this, this);
         Objects.requireNonNull(getCommand("aup")).setExecutor(this);
 
@@ -83,19 +84,29 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     @EventHandler // 服务器启动完成事件
     public void onServerLoad(ServerLoadEvent event) {
         // 异步
-        CompletableFuture.runAsync(() -> {
-            long startupDelay = getConfig().getLong("startupDelay", 64);
-            long startupCycle = getConfig().getLong("startupCycle", 61200);
-            // 检查更新间隔是否过低
-            if(startupCycle < 256 && !getConfig().getBoolean("disableUpdateCheckIntervalTooLow", false)){
-                getLogger().warning("### 更新检查间隔过低将造成性能问题! ###");
-                startupCycle = 512;
-            }
-            // 计时器
-            getLogger().info("更新检查将在 "+ startupDelay +" 秒后运行, 并以每 "+ startupCycle +" 秒的间隔重复运行");
-            Timer timer = new Timer();
-            timer.schedule(new updatePlugins(), startupDelay * 1000, startupCycle * 1000);
-        });
+        CompletableFuture.runAsync(this::setTimer);
+    }
+
+    public void loadConfig(){
+        reloadConfig();
+        debugLog = getConfig().getBoolean("debugLog", true);
+    }
+    public void setTimer(){
+        long startupDelay = getConfig().getLong("startupDelay", 64);
+        long startupCycle = getConfig().getLong("startupCycle", 61200);
+        // 检查更新间隔是否过低
+        if(startupCycle < 256 && !getConfig().getBoolean("disableUpdateCheckIntervalTooLow", false)){
+            getLogger().warning("### 更新检查间隔过低将造成性能问题! ###");
+            startupCycle = 512;
+        }
+        // 计时器
+        getLogger().info("更新检查将在 "+ startupDelay +" 秒后运行, 并以每 "+ startupCycle +" 秒的间隔重复运行");
+        if(timer != null){
+            timer.cancel();
+            timer = null;
+        }
+        timer = new Timer();
+        timer.schedule(new updatePlugins(), startupDelay * 1000, startupCycle * 1000);
     }
 
     @Override // 运行指令
@@ -111,8 +122,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 重载配置
         else if(args[0].equals("reload")){
-            reloadConfig();
-            sender.sendMessage("[AUP] 已完成重载, 部分配置需要重启才能应用");
+            loadConfig();
+            sender.sendMessage("[AUP] 已完成重载");
+            setTimer();
             return true;
         }
 
@@ -141,9 +153,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     }
 
     private class updatePlugins extends TimerTask {
-        String _nowFile = "[???] "; // 当前文件的名称
+        String _nowFile = "[???] ";     // 当前文件的名称
+        String _nowParser = "[???] ";   // 用于解析直链的解析器名称
+        int _fail = 0;              // 更新失败的数量
         long _startTime;            // 最终耗时
-        float _allFileSize;          // 已下载的文件大小合计
+        float _allFileSize;         // 已下载的文件大小合计
 
         // 在这里存放当前插件的配置
         String c_file;              // 文件名称
@@ -166,7 +180,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             // 新线程
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.submit(() -> {
-                getLogger().info("开始运行自动更新");
+                getLogger().info("[## 开始运行自动更新 ##]");
 
                 List<?> list = (List<?>) getConfig().get("list");
                 if(list == null){
@@ -175,6 +189,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 }
 
                 for(Object _li : list){
+                    _fail ++;
+
                     Map<?, ?> li = (Map<?, ?>) _li;
                     if(li == null){
                         getLogger().warning("更新列表配置错误? 项目为空");
@@ -200,8 +216,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     // 下载文件到缓存目录
                     outInfo("正在更新...");
-                    if(!downloadFile(getFileUrl(c_url, c_get), c_tempPath)){
-                        getLogger().warning(_nowFile +"下载文件时出现异常");
+                    String dUrl = getFileUrl(c_url, c_get);
+                    if(dUrl == null){
+                        getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
+                        continue;
+                    }
+                    if(!downloadFile(dUrl, c_tempPath)){
+                        getLogger().warning(_nowFile +"下载文件时出现异常, 将跳过此更新");
                         new File(c_tempPath).delete();
                         continue;
                     }
@@ -212,7 +233,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     // 文件完整性检查
                     if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
-                        getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新");
+                        getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新, 将跳过此更新");
                         new File(c_tempPath).delete();
                         continue;
                     }
@@ -224,6 +245,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String updatePathFileHas = fileHash(c_updatePath);
                     if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
+                        _fail --;
                         new File(c_tempPath).delete();
                         continue;
                     }
@@ -241,33 +263,24 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 更新完成, 并显示文件大小差异
                     float fileSizeDiff = fileSize - oldFileSize;
                     if(fileSizeDiff > 0){
-                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本增加 "+ Math.round(fileSizeDiff / 1048576) +"MB");
+                        outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB], 相比旧版本增加 "+ String.format("%.3f", fileSizeDiff / 1048576) +"MB");
                     }else{
-                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本减少 "+ Math.round(fileSizeDiff / 1048576) +"MB");
+                        outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB], 相比旧版本减少 "+ String.format("%.3f", Math.abs(fileSizeDiff) / 1048576) +"MB");
                     }
 
                     _nowFile = "[???] ";
+                    _nowParser = "[???] ";
+                    _fail --;
                 }
-                getLogger().info("更新全部完成, 耗时 "+
-                        Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒, 共下载 "+
-                        Math.round(_allFileSize / 1048576) +"MB 的文件");
-                _allFileSize = 0;
+
+                getLogger().info("[## 更新全部完成 ##]");
+                getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
+                if(_fail != 0){getLogger().warning("  - 失败: "+ _fail);}
+                getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");
+
                 lock = false;
             });
             executor.shutdown();
-        }
-
-        // 下载文件到指定位置, 并使用指定文件名
-        public boolean downloadFile(String url, String path) {
-            new File(path).delete(); // 删除可能存在的旧文件
-            try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream())) {
-                Path savePath = Path.of(path);
-                Files.copy(in, savePath, StandardCopyOption.REPLACE_EXISTING);
-                return true;
-            } catch (Exception e) {
-                getLogger().warning(e.getMessage());
-                return false;
-            }
         }
 
         // 尝试打开 jar 文件以判断文件是否完整
@@ -306,6 +319,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             String url = _url.replaceAll("/$", "");
 
             if(url.contains("://github.com/")){ // Github 发布
+                _nowParser = "[Github] ";
                 // 获取路径 "/ApliNi/Chat2QQ"
                 Matcher matcher = Pattern.compile("/([^/]+)/([^/]+)$").matcher(url);
                 if(matcher.find()){
@@ -315,10 +329,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     if(c_getPreRelease){
                         // 获取所有发布中的第一个版本
                         data = httpGet("https://api.github.com/repos" + matcher.group(0) + "/releases");
+                        if(data == null){return null;}
                         map = (Map<?, ?>) new Gson().fromJson(data, ArrayList.class).get(0);
                     }else{
                         // 获取一个最新版本
                         data = httpGet("https://api.github.com/repos" + matcher.group(0) + "/releases/latest");
+                        if(data == null){return null;}
                         map = new Gson().fromJson(data, HashMap.class);
                     }
                     // 遍历发布文件列表
@@ -328,17 +344,22 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("name");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("browser_download_url");
-                            outInfo("[Github] 找到版本: "+ dUrl);
+                            outInfo(_nowParser +"找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
+                    getLogger().warning(_nowFile +"[Github] 没有匹配的文件: "+ url);
+                    return null;
                 }
                 getLogger().warning(_nowFile +"[Github] 未找到存储库路径: "+ url);
+                return null;
             }
 
             else if(url.contains("://ci.")){ // Jenkins
+                _nowParser = "[Jenkins] ";
                 // https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/ViaBackwards-4.10.0-23w51b-SNAPSHOT.jar
                 String data = httpGet(url +"/lastSuccessfulBuild/api/json");
+                if(data == null){return null;}
                 Map<?, ?> map = new Gson().fromJson(data, HashMap.class);
                 ArrayList<?> artifacts = (ArrayList<?>) map.get("artifacts");
                 // 遍历发布文件列表
@@ -347,27 +368,33 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String fileName = (String) li.get("fileName");
                     if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                         String dUrl = url +"/lastSuccessfulBuild/artifact/"+ li.get("relativePath");
-                        outInfo("[Jenkins] 找到版本: "+ dUrl);
+                        outInfo(_nowParser +"找到版本: "+ dUrl);
                         return dUrl;
                     }
                 }
+                getLogger().warning(_nowFile +"[Jenkins] 没有匹配的文件: "+ url);
+                return null;
             }
 
             else if(url.contains("://www.spigotmc.org/")){ // Spigot 页面
+                _nowParser = "[Spigot] ";
                 // 获取插件 ID
                 Matcher matcher = Pattern.compile("\\.([0-9]+)$").matcher(url);
                 if(matcher.find()){
                     String dUrl = "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
-                    outInfo("[Spigot] 找到版本: "+ dUrl);
+                    outInfo(_nowParser +"找到版本: "+ dUrl);
                     return dUrl;
                 }
-                getLogger().warning(_nowFile +"[Spigot] 无法从URL中提取直链: "+ url);
+                getLogger().warning(_nowFile +"[Spigot] URL 解析错误, 不包含插件 ID?: "+ url);
+                return null;
             }
 
             else if(url.contains("://modrinth.com/")){ // Modrinth 页面
+                _nowParser = "[Modrinth] ";
                 Matcher matcher = Pattern.compile("/([^/]+)$").matcher(url);
                 if(matcher.find()) {
                     String data = httpGet("https://api.modrinth.com/v2/project"+ matcher.group(0) +"/version");
+                    if(data == null){return null;}
                     // 0 为最新的一个版本
                     Map<?, ?> map = (Map<?, ?>) ((ArrayList<?>) new Gson().fromJson(data, ArrayList.class)).get(0);
                     ArrayList<?> files = (ArrayList<?>) map.get("files");
@@ -378,20 +405,26 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("filename");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("url");
-                            outInfo("[Modrinth] 找到版本: "+ dUrl);
+                            outInfo(_nowParser +"找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
+                    getLogger().warning(_nowFile +"[Modrinth] 没有匹配的文件: "+ url);
+                    return null;
                 }
+                getLogger().warning(_nowFile +"[Modrinth] URL 解析错误, 未找到项目名称: "+ url);
+                return null;
             }
 
             else if(url.contains("://dev.bukkit.org/")){ // Bukkit 页面
+                _nowParser = "[Bukkit] ";
                 String dUrl = url +"/files/latest";
-                outInfo("[Bukkit] 找到版本: "+ dUrl);
+                outInfo(_nowParser +"找到版本: "+ dUrl);
                 return dUrl;
             }
 
             else if(url.contains("://builds.guizhanss.com/")){ // 鬼斩构建站
+                _nowParser = "[鬼斩构建站] ";
                 // https://builds.guizhanss.com/SlimefunGuguProject/AlchimiaVitae/master
 
                 // 获取路径 "/ApliNi/plugin/master"
@@ -399,19 +432,44 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 if(matcher.find()){
                     // 获取所有发布中的第一个版本
                     String data = httpGet("https://builds.guizhanss.com/api/builds" + matcher.group(0));
+                    if(data == null){return null;}
                     ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, HashMap.class).get("data");
                     Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
 
                     String dUrl = "https://builds.guizhanss.com/r2"+ matcher.group(0) +"/"+ map.get("target");
-                    outInfo("[鬼斩构建站] 找到版本: "+ dUrl);
+                    outInfo(_nowParser +"找到版本: "+ dUrl);
                     return dUrl;
                 }
-                getLogger().warning(_nowFile +"[鬼斩构建站] 未找到存储库路径: "+ url);
+                getLogger().warning(_nowFile + _nowParser +"未找到存储库路径: "+ url);
+                return null;
             }
 
-            // 没有匹配的项
-            outInfo("[URL] "+ _url);
-            return _url;
+            else if(url.contains("://legacy.curseforge.com/")){ // CurseForge 页面
+                _nowParser = "[CurseForge] ";
+                // https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
+                // data-project-id="31620"
+
+                String html = httpGet(url); // 下载 html 网页, 获取 project-id
+                if(html == null){return null;}
+                Matcher matcher = Pattern.compile("data-project-id=\"([0-9+])\"").matcher(html);
+                if(matcher.find()){
+                    String data = httpGet(matcher.group(1));
+                    if(data == null){return null;}
+                    ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, ArrayList.class);
+                    Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
+                    String dUrl = (String) map.get("downloadUrl");
+                    outInfo(_nowParser +"找到版本: "+ dUrl);
+                    return dUrl;
+                }
+                getLogger().warning(_nowFile + _nowParser +"未找到项目 ID: "+ url);
+                return null;
+            }
+
+            else{ // 没有匹配的项
+                _nowParser = "[URL] ";
+                outInfo(_nowParser + _url);
+                return _url;
+            }
         }
 
         // 如果 in1 为空则选择 in2, 否则选择 in1
@@ -435,25 +493,58 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // http 请求获取字符串
         public String httpGet(String url) {
+            HttpURLConnection cxn = getHttpCxn(url);
+            if(cxn == null){return null;}
             try {
-                HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-                connection.setRequestMethod("GET");
-                if(connection.getResponseCode() == 200){
-                    // 读取响应内容
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    char[] buffer = new char[1024];
-                    int len;
-                    while ((len = reader.read(buffer)) > 0) {
-                        response.append(buffer, 0, len);
-                    }
-                    reader.close();
-
-                    return response.toString();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(cxn.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String line;
+                while((line = reader.readLine()) != null){
+                    stringBuilder.append(line);
                 }
-                getLogger().warning("[HTTP] 请求失败? ("+ connection.getResponseCode() +"): "+ url);
+                reader.close();
+                return String.valueOf(stringBuilder);
             } catch (Exception e) {
-                getLogger().warning("[HTTP] "+ e.getMessage());
+                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
+            }
+            return null;
+        }
+
+        // 下载文件到指定位置, 并使用指定文件名
+        public boolean downloadFile(String url, String path) {
+            new File(path).delete(); // 删除可能存在的旧文件
+            HttpURLConnection cxn = getHttpCxn(url);
+            if(cxn == null){return false;}
+            try {
+                BufferedInputStream in = new BufferedInputStream(cxn.getInputStream());
+                Path savePath = Path.of(path);
+                Files.copy(in, savePath, StandardCopyOption.REPLACE_EXISTING);
+                return true;
+            } catch (Exception e) {
+                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
+            }
+            return false;
+        }
+
+        // 获取 HTTP 连接
+        public HttpURLConnection getHttpCxn(String url) {
+            try {
+                HttpURLConnection cxn = (HttpURLConnection) new URL(url).openConnection();
+                cxn.setRequestMethod("GET");
+                // 填充请求头数据
+                List<?> list = (List<?>) getConfig().get("setRequestProperty");
+                if(list != null){
+                    for(Object _li : list) {
+                        Map<?, ?> li = (Map<?, ?>) _li;
+                        cxn.setRequestProperty((String) li.get("name"), (String) li.get("value"));
+                    }
+                }
+                if(cxn.getResponseCode() == 200){
+                    return cxn;
+                }
+                getLogger().warning(_nowFile +"[HTTP] 请求失败? ("+ cxn.getResponseCode() +"): "+ url);
+            } catch (Exception e) {
+                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
             }
             return null;
         }

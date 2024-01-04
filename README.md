@@ -1,4 +1,4 @@
-## AutoUpdatePlugins `v1.2`
+## AutoUpdatePlugins `v2.0`
 更好的自动更新插件
 
 [//]: # (下载: https://modrinth.com/plugin/AutoUpdatePlugins)
@@ -31,7 +31,7 @@
 ### 配置
 ```yaml
 
-# 服务器启动完成后等待多长时间开始运行第一次更新 (秒, 修改后需要重启
+# 服务器启动完成后等待多长时间开始运行第一次更新 (秒
 startupDelay: 64
 
 # 第一次运行完成后以此频率重复运行更新 (秒, 修改后需要重启
@@ -56,6 +56,11 @@ ignoreDuplicates: true
 
 # 全局禁用证书验证, 修改后需要重启
 disableCertificateVerification: false
+
+# HTTP 请求中编辑请求头
+setRequestProperty:
+  - name: 'User-Agent'
+    value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 # 显示完整的更新日志, 可在测试完成后关闭, 关闭后依然会显示错误/警告/开始和完成信息
 debugLog: true
