@@ -261,7 +261,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     // 更新完成, 并显示文件大小变化
-                    outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB] -> ["+ String.format("%.3f", oldFileSize / 1048576) +"MB]");
+                    outInfo("更新完成 ["+ String.format("%.3f", oldFileSize / 1048576) +"MB] -> ["+ String.format("%.3f", fileSize / 1048576) +"MB]");
 
                     _nowFile = "[???] ";
                     _nowParser = "[???] ";
