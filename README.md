@@ -27,6 +27,28 @@
 [[使用量统计]](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629)
 <a href="https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629">![](https://bstats.org/signatures/bukkit/ApliNi-AutoUpdatePlugins.svg)</a>
 
+**运行日志**
+```yaml
+[INFO]: [AUP] 更新检查将在 64 秒后运行, 并以每 61200 秒的间隔重复运行
+[INFO]: [AUP] [## 开始运行自动更新 ##]
+[INFO]: [AUP] [EssentialsX.jar] 正在更新...
+[INFO]: [AUP] [EssentialsX.jar] [Github] 找到版本: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsX-2.20.1.jar
+[INFO]: [AUP] [EssentialsX.jar] 更新完成 [1.174MB] -> [2.928MB]
+[INFO]: [AUP] [EssentialsXChat.jar] 正在更新...
+[INFO]: [AUP] [EssentialsXChat.jar] [Github] 找到版本: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsXChat-2.20.1.jar
+[INFO]: [AUP] [EssentialsXChat.jar] 更新完成 [0.016MB] -> [0.017MB]
+[INFO]: [AUP] [CoreProtect.jar] 正在更新...
+[INFO]: [AUP] [CoreProtect.jar] [Modrinth] 找到版本: https://cdn.modrinth.com/data/Lu3KuzdV/versions/w3P6ufP1/CoreProtect-22.2.jar
+[INFO]: [AUP] [CoreProtect.jar] 文件已是最新版本
+[INFO]: [AUP] [Dynmap网页地图.jar] 正在更新...
+[WARN]: [AUP] [Dynmap网页地图.jar] [HTTP] 请求失败? (403): https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
+[WARN]: [AUP] [Dynmap网页地图.jar] [CurseForge] 解析文件直链时出现错误, 将跳过此更新
+[INFO]: [AUP] [## 更新全部完成 ##]
+[INFO]: [AUP]   - 耗时: 19 秒
+[WARN]: [AUP]   - 失败: 1
+[INFO]: [AUP]   - 下载文件: 3.73MB
+```
+
 
 ### 配置
 ```yaml
