@@ -1,4 +1,4 @@
-## AutoUpdatePlugins `v1.1`
+## AutoUpdatePlugins `v1.2`
 更好的自动更新插件
 
 [//]: # (下载: https://modrinth.com/plugin/AutoUpdatePlugins)
