@@ -239,11 +239,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     // 更新完成, 并显示文件大小差异
-                    float sizeDiff = fileSize - oldFileSize;
-                    if(sizeDiff > 0){
-                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本增加 "+ Math.round(sizeDiff / 1048576) +"MB");
+                    float fileSizeDiff = fileSize - oldFileSize;
+                    if(fileSizeDiff > 0){
+                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本增加 "+ Math.round(fileSizeDiff / 1048576) +"MB");
                     }else{
-                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本减少 "+ Math.round(sizeDiff / 1048576) +"MB");
+                        outInfo("更新完成 ["+ Math.round(fileSize / 1048576) +"MB], 相比旧版本减少 "+ Math.round(fileSizeDiff / 1048576) +"MB");
                     }
 
                     _nowFile = "[???] ";
@@ -389,6 +389,24 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 String dUrl = url +"/files/latest";
                 outInfo("[Bukkit] 找到版本: "+ dUrl);
                 return dUrl;
+            }
+
+            else if(url.contains("://builds.guizhanss.com/")){ // 鬼斩构建站
+                // https://builds.guizhanss.com/SlimefunGuguProject/AlchimiaVitae/master
+
+                // 获取路径 "/ApliNi/plugin/master"
+                Matcher matcher = Pattern.compile("/([^/]+)/([^/]+)/([^/]+)$").matcher(url);
+                if(matcher.find()){
+                    // 获取所有发布中的第一个版本
+                    String data = httpGet("https://builds.guizhanss.com/api/builds" + matcher.group(0));
+                    ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, HashMap.class).get("data");
+                    Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
+
+                    String dUrl = "https://builds.guizhanss.com/r2"+ matcher.group(0) +"/"+ map.get("target");
+                    outInfo("[鬼斩构建站] 找到版本: "+ dUrl);
+                    return dUrl;
+                }
+                getLogger().warning(_nowFile +"[鬼斩构建站] 未找到存储库路径: "+ url);
             }
 
             // 没有匹配的项

@@ -10,6 +10,13 @@ https://github.com/ApliNi/AutoUpdatePlugins
 
 ---
 
+## AutoUpdatePlugins `v1.1`
+更好的自动更新插件
+
+[//]: # (下载: https://modrinth.com/plugin/AutoUpdatePlugins)
+
+---
+
 ## 功能和指令
 - `/aup` 显示插件信息
     - `/aup reload` 重新加载配置
@@ -18,7 +25,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
 
 - [x] 使用 `update` 目录进行插件更新
 - [x] 根据插件发布页自动找到下载链接
-  - `Github, Jenkins, Spigot, Modrinth, Bukkit`
+  - `Github, Jenkins, Spigot, Modrinth, Bukkit, 鬼斩构建站 v2`
     - 支持下载 Github 中的预发布版本
 - [x] 支持匹配相同发布下的不同文件
   - `Github, Jenkins, Modrinth`
@@ -71,38 +78,44 @@ debugLog: true
 #bStats: true
 
 # 插件列表
-# URL 支持自动下载 `Github, Jenkins, Spigot, Modrinth, Bukkit` 页面的插件, 其他链接将直接下载
+# URL 支持自动下载 `Github, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
 # 其中 `Github, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
 # Github 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
 
 ### 示例配置 ### 测试时注意 Yaml 格式
 
-#  - file: 'EssentialsX.jar'
+#  - file: 'EssentialsX.jar' # Github
 #    url: https://github.com/EssentialsX/Essentials
 #    get: 'EssentialsX-([0-9.]+)\.jar'  # 如果 Github/Jenkins 发布中存在多个文件, 则需要匹配其中一个, 否则下载第一个 (使用正则表达式
 
-#  - file: 'EssentialsXChat.jar'
+#  - file: 'EssentialsXChat.jar' # 匹配相同发布中的不同文件
 #    url: https://github.com/EssentialsX/Essentials
 #    get: 'EssentialsXChat-([0-9.]+)\.jar'
 
-#  - file: 'Geyser-Spigot.jar'
+#  - file: 'Geyser-Spigot.jar' # URL
 #    url: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
 
-#  - file: 'ViaVersion-DEV.jar'
+#  - file: 'ViaVersion-DEV.jar' # Jenkins
 #    url: https://ci.viaversion.com/job/ViaVersion-DEV/
 
 #  - file: 'ViaBackwards-DEV.jar'
 #    url: https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-DEV/
 
-#  - file: 'CoreProtect.jar'
+#  - file: 'CoreProtect.jar' # Modrinth
 #    url: https://modrinth.com/plugin/coreprotect/
 
-#  - file: 'UseTranslatedNames翻译物品名.jar'  # 可以修改最后安装的插件名称
+#  - file: 'UseTranslatedNames翻译物品名.jar'
 #    url: https://modrinth.com/plugin/usetranslatednames
 
-#  - file: 'HttpRequests网络请求.jar'
+#  - file: 'HttpRequests网络请求.jar' # SpigotMC
 #    url: https://www.spigotmc.org/resources/http-requests.101253/
+
+#  - file: 'SF4_Slimefun4粘液科技.jar' # 鬼斩构建站 v2
+#    url: https://builds.guizhanss.com/StarWishsama/Slimefun4/master
+
+#  - file: 'SF4_FluffyMachines蓬松科技.jar'
+#    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
 
 #  # 可以像这样为每个文件添加配置
 #  - file: 'serverConfig.yml'
@@ -118,13 +131,14 @@ list:
 #  String tempPath;          // 下载缓存路径, 默认使用全局配置
 #  String updatePath;        // 更新存放路径, 默认使用全局配置
 #  String filePath;          // 最终安装路径, 默认使用全局配置
-#  String get;               // 查找单个文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
+#  String get;               // 选择发行版本的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
 #  boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
 #  boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
 
 ```
 
 一些功能和代码参考了项目 [NewAmazingPVP/AutoUpdatePlugins](https://github.com/NewAmazingPVP/AutoUpdatePlugins).
+
 
 ---
 
