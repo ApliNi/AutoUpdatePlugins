@@ -251,7 +251,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     // 获取旧版本的文件大小
-                    long oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_tempPath).length();
+                    float oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_tempPath).length();
 
                     // 移动到更新目录
                     try {
@@ -260,13 +260,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(e.getMessage());
                     }
 
-                    // 更新完成, 并显示文件大小差异
-                    float fileSizeDiff = fileSize - oldFileSize;
-                    if(fileSizeDiff > 0){
-                        outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB], 相比旧版本增加 "+ String.format("%.3f", fileSizeDiff / 1048576) +"MB");
-                    }else{
-                        outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB], 相比旧版本减少 "+ String.format("%.3f", Math.abs(fileSizeDiff) / 1048576) +"MB");
-                    }
+                    // 更新完成, 并显示文件大小变化
+                    outInfo("更新完成 ["+ String.format("%.3f", fileSize / 1048576) +"MB] -> ["+ String.format("%.3f", oldFileSize / 1048576) +"MB]");
 
                     _nowFile = "[???] ";
                     _nowParser = "[???] ";
