@@ -251,7 +251,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     // 获取旧版本的文件大小
-                    float oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_tempPath).length();
+                    float oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_updatePath).length();
 
                     // 移动到更新目录
                     try {
