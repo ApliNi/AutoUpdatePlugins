@@ -44,6 +44,9 @@ debugLog: true
 # Github 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
 
+  - file: 'AutoUpdatePlugins自动更新.jar'
+    url: https://github.com/ApliNi/AutoUpdatePlugins/
+
 ### 示例配置 ### 测试时注意 Yaml 格式
 
 #  - file: 'EssentialsX.jar' # Github
