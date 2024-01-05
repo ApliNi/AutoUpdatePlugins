@@ -498,10 +498,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     stringBuilder.append(line);
                 }
                 reader.close();
+                cxn.disconnect();
                 return String.valueOf(stringBuilder);
             } catch (Exception e) {
                 getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
             }
+            cxn.disconnect();
             return null;
         }
 
@@ -514,17 +516,20 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 BufferedInputStream in = new BufferedInputStream(cxn.getInputStream());
                 Path savePath = Path.of(path);
                 Files.copy(in, savePath, StandardCopyOption.REPLACE_EXISTING);
+                cxn.disconnect();
                 return true;
             } catch (Exception e) {
                 getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
             }
+            cxn.disconnect();
             return false;
         }
 
         // 获取 HTTP 连接
         public HttpURLConnection getHttpCxn(String url) {
+            HttpURLConnection cxn = null;
             try {
-                HttpURLConnection cxn = (HttpURLConnection) new URL(url).openConnection();
+                cxn = (HttpURLConnection) new URL(url).openConnection();
                 cxn.setRequestMethod("GET");
                 // 填充请求头数据
                 List<?> list = (List<?>) getConfig().get("setRequestProperty");
@@ -537,10 +542,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 if(cxn.getResponseCode() == 200){
                     return cxn;
                 }
+                cxn.disconnect();
                 getLogger().warning(_nowFile +"[HTTP] 请求失败? ("+ cxn.getResponseCode() +"): "+ url);
             } catch (Exception e) {
                 getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
             }
+            if(cxn != null){cxn.disconnect();}
             return null;
         }
 
