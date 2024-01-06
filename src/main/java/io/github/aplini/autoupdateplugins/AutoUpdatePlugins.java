@@ -270,7 +270,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 getLogger().info("[## 更新全部完成 ##]");
                 getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
-                if(_fail != 0){getLogger().warning("  - 失败: "+ _fail);}
+                if(_fail != 0){getLogger().warning("  - 失败: "+ _fail +" ("+ list.size() +")");}
                 getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");
 
                 lock = false;
