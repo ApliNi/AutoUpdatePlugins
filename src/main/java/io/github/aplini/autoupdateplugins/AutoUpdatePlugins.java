@@ -186,8 +186,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         String _nowFile = "[???] ";     // 当前文件的名称
         String _nowParser = "[???] ";   // 用于解析直链的解析器名称
         int _fail = 0;              // 更新失败的数量
+        int _allRequests = 0;       // 共进行的网络请求数量
         long _startTime;            // 最终耗时
-        float _allFileSize;         // 已下载的文件大小合计
+        float _allFileSize = 0;     // 已下载的文件大小合计
 
         // 在这里存放当前插件的配置
         String c_file;              // 文件名称
@@ -337,7 +338,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 getLogger().info("[## 更新全部完成 ##]");
                 getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
                 if(_fail != 0){getLogger().warning("  - 失败: "+ _fail +" ("+ list.size() +")");}
-                getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");
+                if(_allRequests != 0){getLogger().info("  - 网络请求: "+ _allRequests);}
+                if(_allFileSize != 0){getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");}
 
                 lock = false;
 
@@ -605,6 +607,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             try {
                 HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("HEAD");
+                _allRequests ++;
                 cl = cxn.getContentLength();
                 cxn.disconnect();
             } catch (Exception e) {
@@ -619,6 +622,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             try {
                 cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("GET");
+                _allRequests ++;
                 // 填充请求头数据
                 List<?> list = (List<?>) getConfig().get("setRequestProperty");
                 if(list != null){
