@@ -255,29 +255,22 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         int contentLength = getContentLength(dUrl);
                         // 是否与上一个版本相同
                         String pPath = "previous." + li.toString().hashCode();
-                        if (data.get(pPath) == null) {
-                            // 创建数据
-                            data.set(pPath + ".file", c_file);
-                            data.set(pPath + ".time", nowDate());
-                            data.set(pPath + ".dUrl", dUrl);
-                            data.set(pPath + ".contentLength", contentLength);
-                        } else {
-                            // 更新数据
-                            data.set(pPath + ".time", nowDate());
+                        if (data.get(pPath) != null) {
                             // 检查数据差异
                             int i = 0;
-                            if (!data.getString(pPath + ".dUrl", "").equals(dUrl)) {
-                                i++;
-                            }
-                            if (data.getInt(pPath + ".contentLength", -1) != contentLength) {
-                                i++;
-                            }
+                            if (!data.getString(pPath + ".dUrl", "").equals(dUrl)) {i++;}
+                            if (data.getInt(pPath + ".contentLength", -1) != contentLength) {i++;}
                             if (i == 0) {
                                 outInfo("[缓存] 文件已是最新版本");
                                 _fail--;
                                 continue;
                             }
                         }
+                        // 更新数据
+                        data.set(pPath + ".file", c_file);
+                        data.set(pPath + ".time", nowDate());
+                        data.set(pPath + ".dUrl", dUrl);
+                        data.set(pPath + ".contentLength", contentLength);
                     }
 
                     if(!downloadFile(dUrl, c_tempPath)){
