@@ -229,7 +229,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     // 检查基础配置
                     c_file = (String) SEL(li.get("file"), "");
-                    c_url = (String) SEL(li.get("url"), "");
+                    c_url = ((String) SEL(li.get("url"), "")).trim();
                     if(c_file.isEmpty() || c_url.isEmpty()){
                         getLogger().warning("更新列表配置错误? 缺少基本配置");
                         continue;
@@ -252,8 +252,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
                         continue;
                     }
-                    dUrl = toASCIIString(dUrl);
-                    outInfo(dUrl);
+                    dUrl = checkURL(dUrl);
+//                    outInfo(dUrl);
 
                     // 启用上一个更新记录与检查
                     int contentLength = -1;
@@ -654,7 +654,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         }
 
         // 处理 URL 中的特殊字符
-        public String toASCIIString(String url){
+        public String checkURL(String url){
             // 清除前后的空格
             // 转义 URL 中的空格
             try {
