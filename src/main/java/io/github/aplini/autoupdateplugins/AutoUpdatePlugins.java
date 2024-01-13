@@ -185,7 +185,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     private class updatePlugins extends TimerTask {
         String _nowFile = "[???] ";     // 当前文件的名称
         String _nowParser = "[???] ";   // 用于解析直链的解析器名称
-        int _fail = 0;              // 更新失败的数量
+        int _fail = 0;              // 更新失败数量
+        int _success = 0;           // 更新成功数量
         int _allRequests = 0;       // 共进行的网络请求数量
         long _startTime;            // 最终耗时
         float _allFileSize = 0;     // 已下载的文件大小合计
@@ -269,6 +270,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                             if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
                                     temp.getString(pPath + ".feature", "").equals(feature)){
                                 outInfo("[缓存] 文件已是最新版本");
+                                _success ++;
                                 _fail--;
                                 continue;
                             }
@@ -308,6 +310,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String updatePathFileHas = fileHash(c_updatePath);
                     if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
+                        _success ++;
                         _fail --;
                         delFile(c_tempPath);
                         continue;
@@ -324,7 +327,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     // 更新完成, 并显示文件大小变化
-                    outInfo("更新完成 ["+ String.format("%.3f", oldFileSize / 1048576) +"MB] -> ["+ String.format("%.3f", fileSize / 1048576) +"MB]");
+                    outInfo("更新完成 ["+ String.format("%.2f", oldFileSize / 1048576) +"MB] -> ["+ String.format("%.2f", fileSize / 1048576) +"MB]");
+                    _success ++;
 
                     _nowFile = "[???] ";
                     _nowParser = "[???] ";
@@ -335,7 +339,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 getLogger().info("[## 更新全部完成 ##]");
                 getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
-                if(_fail != 0){getLogger().warning("  - 失败: "+ _fail +" ("+ list.size() +")");}
+                String st = "  - ";
+                if(_fail != 0){st += "失败: "+ _fail +", ";}
+                if(_success != 0){st += "更新: "+ _success +", ";}
+                st += "完成: "+ list.size();
+                if(_fail != 0){getLogger().warning(st);}else{getLogger().info(st);}
                 if(_allRequests != 0){getLogger().info("  - 网络请求: "+ _allRequests);}
                 if(_allFileSize != 0){getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");}
 
