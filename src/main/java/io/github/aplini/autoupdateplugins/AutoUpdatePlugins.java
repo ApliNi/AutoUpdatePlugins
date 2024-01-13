@@ -277,7 +277,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     if(!downloadFile(dUrl, c_tempPath)){
                         getLogger().warning(_nowFile +"下载文件时出现异常, 将跳过此更新");
-                        new File(c_tempPath).delete();
+                        delFile(c_tempPath);
                         continue;
                     }
 
@@ -288,7 +288,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 文件完整性检查
                     if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
                         getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新, 将跳过此更新");
-                        new File(c_tempPath).delete();
+                        delFile(c_tempPath);
                         continue;
                     }
 
@@ -309,7 +309,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
                         _fail --;
-                        new File(c_tempPath).delete();
+                        delFile(c_tempPath);
                         continue;
                     }
 
@@ -583,7 +583,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 下载文件到指定位置, 并使用指定文件名
         public boolean downloadFile(String url, String path){
-            new File(path).delete(); // 删除可能存在的旧文件
+            delFile(path); // 删除可能存在的旧文件
             HttpURLConnection cxn = getHttpCxn(url);
             if(cxn == null){return false;}
             try {
@@ -676,6 +676,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 getLogger().warning(_nowFile +"[URI] URL 无效或不规范: "+ url);
                 return null;
             }
+        }
+
+        // 删除文件
+        public void delFile(String path){
+            new File(path).delete();
+            // getLogger().warning(_nowFile +"[FILE] 删除文件失败: "+ path);
         }
     }
 }
