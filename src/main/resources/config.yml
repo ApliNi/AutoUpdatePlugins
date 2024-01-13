@@ -3,7 +3,7 @@
 startupDelay: 64
 
 # 第一次运行完成后以此频率重复运行更新 (秒, 修改后需要重启
-startupCycle: 61200 # 17小时
+startupCycle: 14400 # 4小时
 
 # 插件更新目录, 设置与 bukkit.yml 中的一致
 # 注意路径最后一定是 "/"
@@ -16,7 +16,7 @@ tempPath: './plugins/AutoUpdatePlugins/temp/'
 # 服务器正在运行的插件或文件的目录, 用于哈希检查
 filePath: './plugins/'
 
-# 启用上一个更新记录并通过这些信息检查更新
+# 启用上一个更新记录并通过这些信息检查更新 (temp.yml)
 enablePreviousUpdate: true
 
 # 文件完整性检查, 只对 .jar / .zip 等文件有效. 尝试以压缩包的形式打开, 若失败则表示不完整

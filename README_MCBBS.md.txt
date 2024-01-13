@@ -4,17 +4,10 @@ https://github.com/ApliNi/AutoUpdatePlugins
 
 ---
 
-## AutoUpdatePlugins `v2.0`
+## AutoUpdatePlugins `v2.2`
 更好的自动更新插件
 
-[//]: # (下载: https://modrinth.com/plugin/AutoUpdatePlugins)
-
----
-
-## AutoUpdatePlugins `v2.0`
-更好的自动更新插件
-
-[//]: # (下载: https://modrinth.com/plugin/AutoUpdatePlugins)
+下载: https://modrinth.com/plugin/AutoUpdatePlugins
 
 ---
 
@@ -31,6 +24,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
 - [x] 支持匹配相同发布下的不同文件
   - `Github, Jenkins, Modrinth`
 - [x] 支持文件完整性检查
+- [x] 缓存上一个更新的信息, 不重复下载文件
 - [x] 不重复安装更新
 - [x] 每个更新任务可以单独添加配置
 - [x] 可配置的证书验证
@@ -42,24 +36,26 @@ https://github.com/ApliNi/AutoUpdatePlugins
 
 **运行日志**
 ```yaml
-[INFO]: [AUP] 更新检查将在 64 秒后运行, 并以每 61200 秒的间隔重复运行
+[INFO]: [AUP] 更新检查将在 64 秒后运行, 并以每 14400 秒的间隔重复运行
 [INFO]: [AUP] [## 开始运行自动更新 ##]
 [INFO]: [AUP] [EssentialsX.jar] 正在更新...
 [INFO]: [AUP] [EssentialsX.jar] [Github] 找到版本: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsX-2.20.1.jar
-[INFO]: [AUP] [EssentialsX.jar] 更新完成 [1.174MB] -> [2.928MB]
+[INFO]: [AUP] [EssentialsX.jar] 更新完成 [1.17MB] -> [2.92MB]
 [INFO]: [AUP] [EssentialsXChat.jar] 正在更新...
 [INFO]: [AUP] [EssentialsXChat.jar] [Github] 找到版本: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsXChat-2.20.1.jar
-[INFO]: [AUP] [EssentialsXChat.jar] 更新完成 [0.016MB] -> [0.017MB]
+[INFO]: [AUP] [EssentialsXChat.jar] 更新完成 [0.01MB] -> [0.01MB]
 [INFO]: [AUP] [CoreProtect.jar] 正在更新...
 [INFO]: [AUP] [CoreProtect.jar] [Modrinth] 找到版本: https://cdn.modrinth.com/data/Lu3KuzdV/versions/w3P6ufP1/CoreProtect-22.2.jar
 [INFO]: [AUP] [CoreProtect.jar] 文件已是最新版本
+...
 [INFO]: [AUP] [Dynmap网页地图.jar] 正在更新...
 [WARN]: [AUP] [Dynmap网页地图.jar] [HTTP] 请求失败? (403): https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
 [WARN]: [AUP] [Dynmap网页地图.jar] [CurseForge] 解析文件直链时出现错误, 将跳过此更新
 [INFO]: [AUP] [## 更新全部完成 ##]
-[INFO]: [AUP]   - 耗时: 19 秒
-[WARN]: [AUP]   - 失败: 1
-[INFO]: [AUP]   - 下载文件: 3.73MB
+[INFO]: [AUP]   - 耗时: 268 秒
+[WARN]: [AUP]   - 失败: 2, 更新: 22, 完成: 24
+[INFO]: [AUP]   - 网络请求: 48
+[INFO]: [AUP]   - 下载文件: 40.10MB
 ```
 
 
@@ -70,7 +66,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
 startupDelay: 64
 
 # 第一次运行完成后以此频率重复运行更新 (秒, 修改后需要重启
-startupCycle: 61200 # 17小时
+startupCycle: 14400 # 4小时
 
 # 插件更新目录, 设置与 bukkit.yml 中的一致
 # 注意路径最后一定是 "/"
@@ -82,6 +78,9 @@ tempPath: './plugins/AutoUpdatePlugins/temp/'
 
 # 服务器正在运行的插件或文件的目录, 用于哈希检查
 filePath: './plugins/'
+
+# 启用上一个更新记录并通过这些信息检查更新 (temp.yml)
+enablePreviousUpdate: true
 
 # 文件完整性检查, 只对 .jar / .zip 等文件有效. 尝试以压缩包的形式打开, 若失败则表示不完整
 zipFileCheck: true
@@ -110,6 +109,9 @@ debugLog: true
 # 其中 `Github, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
 # Github 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
+
+  - file: 'AutoUpdatePlugins自动更新.jar'
+    url: https://github.com/ApliNi/AutoUpdatePlugins/
 
 ### 示例配置 ### 测试时注意 Yaml 格式
 
