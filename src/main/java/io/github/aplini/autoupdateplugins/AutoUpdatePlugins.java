@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -581,7 +583,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public int getContentLength(String url){
             int cl = -1;
             try {
-                HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
+                HttpURLConnection cxn = (HttpURLConnection) new URI(URLEncoder.encode(url, StandardCharsets.UTF_8)).toURL().openConnection();
                 cxn.setRequestMethod("HEAD");
                 cl = cxn.getContentLength();
                 cxn.disconnect();
@@ -595,7 +597,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public HttpURLConnection getHttpCxn(String url){
             HttpURLConnection cxn = null;
             try {
-                cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
+                cxn = (HttpURLConnection) new URI(URLEncoder.encode(url, StandardCharsets.UTF_8)).toURL().openConnection();
                 cxn.setRequestMethod("GET");
                 // 填充请求头数据
                 List<?> list = (List<?>) getConfig().get("setRequestProperty");
