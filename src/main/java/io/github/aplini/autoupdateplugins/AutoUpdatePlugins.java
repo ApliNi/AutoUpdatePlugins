@@ -270,7 +270,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                             if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
                                     temp.getString(pPath + ".feature", "").equals(feature)){
                                 outInfo("[缓存] 文件已是最新版本");
-                                _success ++;
                                 _fail--;
                                 continue;
                             }
@@ -310,7 +309,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String updatePathFileHas = fileHash(c_updatePath);
                     if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
                         outInfo("文件已是最新版本");
-                        _success ++;
                         _fail --;
                         delFile(c_tempPath);
                         continue;
