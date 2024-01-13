@@ -12,7 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -22,9 +21,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -231,7 +228,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning("更新列表配置错误? 缺少基本配置");
                         continue;
                     }
-                    c_url = URLEncoder.encode(c_url, StandardCharsets.UTF_8);
 
                     _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
                     c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
@@ -250,29 +246,37 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
                         continue;
                     }
-                    dUrl = URLEncoder.encode(dUrl, StandardCharsets.UTF_8);
+                    dUrl = toASCIIString(dUrl);
+                    outInfo(dUrl);
 
-                    // 获取文件大小
-                    int contentLength = getContentLength(dUrl);
-                    // 是否与上一个版本相同
-                    String pPath = "previous."+ li.toString().hashCode();
-                    if(data.get(pPath) == null){
-                        // 创建数据
-                        data.set(pPath +".file", c_file);
-                        data.set(pPath +".time", nowDate());
-                        data.set(pPath +".dUrl", dUrl);
-                        data.set(pPath +".contentLength", contentLength);
-                    }else{
-                        // 更新数据
-                        data.set(pPath +".time", nowDate());
-                        // 检查数据差异
-                        int i = 0;
-                        if(!data.getString(pPath + ".dUrl", "").equals(dUrl)){i++;}
-                        if(data.getInt(pPath +".contentLength", -1) != contentLength){i++;}
-                        if(i == 0){
-                            outInfo("[缓存] 文件已是最新版本");
-                            _fail --;
-                            continue;
+                    // 启用上一个更新记录与检查
+                    if(getConfig().getBoolean("enablePreviousUpdate", true)){
+                        // 获取文件大小
+                        int contentLength = getContentLength(dUrl);
+                        // 是否与上一个版本相同
+                        String pPath = "previous." + li.toString().hashCode();
+                        if (data.get(pPath) == null) {
+                            // 创建数据
+                            data.set(pPath + ".file", c_file);
+                            data.set(pPath + ".time", nowDate());
+                            data.set(pPath + ".dUrl", dUrl);
+                            data.set(pPath + ".contentLength", contentLength);
+                        } else {
+                            // 更新数据
+                            data.set(pPath + ".time", nowDate());
+                            // 检查数据差异
+                            int i = 0;
+                            if (!data.getString(pPath + ".dUrl", "").equals(dUrl)) {
+                                i++;
+                            }
+                            if (data.getInt(pPath + ".contentLength", -1) != contentLength) {
+                                i++;
+                            }
+                            if (i == 0) {
+                                outInfo("[缓存] 文件已是最新版本");
+                                _fail--;
+                                continue;
+                            }
                         }
                     }
 
@@ -634,6 +638,20 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             return now.format(formatter);
+        }
+
+        // 处理 URL 中的特殊字符
+        public String toASCIIString(String url){
+            // 清除前后的空格
+            // 转义 URL 中的空格
+            try {
+                return new URI(url.trim()
+                        .replace(" ", "%20"))
+                        .toASCIIString();
+            } catch (URISyntaxException e) {
+                getLogger().warning(_nowFile +"[URI] URL 无效或不规范: "+ url);
+                return null;
+            }
         }
     }
 }

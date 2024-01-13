@@ -16,6 +16,9 @@ tempPath: './plugins/AutoUpdatePlugins/temp/'
 # 服务器正在运行的插件或文件的目录, 用于哈希检查
 filePath: './plugins/'
 
+# 启用上一个更新记录并通过这些信息检查更新
+enablePreviousUpdate: true
+
 # 文件完整性检查, 只对 .jar / .zip 等文件有效. 尝试以压缩包的形式打开, 若失败则表示不完整
 zipFileCheck: true
 
