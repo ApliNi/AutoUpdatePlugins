@@ -428,7 +428,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             else if(url.contains("://www.spigotmc.org/")){ // Spigot 页面
                 _nowParser = "[Spigot] ";
                 // 获取插件 ID
-                Matcher matcher = Pattern.compile("\\.([0-9]+)$").matcher(url);
+                Matcher matcher = Pattern.compile("([0-9]+)$").matcher(url);
                 if(matcher.find()){
                     String dUrl = "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
                     outInfo(_nowParser +"找到版本: "+ dUrl);
