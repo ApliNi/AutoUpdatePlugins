@@ -5,11 +5,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -18,12 +21,15 @@ import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +44,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     boolean lock = false;
     boolean debugLog = true;
     Timer timer = null;
+
+    File dataFile;
+    FileConfiguration data;
 
     @Override
     public void onEnable() {
@@ -81,6 +90,15 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     public void onDisable() {}
 
 
+    public void saveDate(){
+        try {
+            data.save(dataFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     @EventHandler // 服务器启动完成事件
     public void onServerLoad(ServerLoadEvent event) {
         // 异步
@@ -90,6 +108,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     public void loadConfig(){
         reloadConfig();
         debugLog = getConfig().getBoolean("debugLog", true);
+
+        dataFile = new File("./plugins/AutoUpdatePlugins/data.yml");
+        data = YamlConfiguration.loadConfiguration(dataFile);
+        if(data.get("previous") == null){
+            data.set("previous", new HashMap<>());
+        }
+        saveDate();
     }
     public void setTimer(){
         long startupDelay = getConfig().getLong("startupDelay", 64);
@@ -215,12 +240,37 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
 
                     // 下载文件到缓存目录
-                    outInfo("正在更新...");
+                    outInfo("正在检查更新...");
                     String dUrl = getFileUrl(c_url, c_get);
                     if(dUrl == null){
                         getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
                         continue;
                     }
+
+                    // 获取文件大小
+                    int contentLength = getContentLength(dUrl);
+                    // 是否与上一个版本相同
+                    String pPath = "previous."+ li.toString().hashCode();
+                    if(data.get(pPath) == null){
+                        // 创建数据
+                        data.set(pPath +".file", c_file);
+                        data.set(pPath +".time", nowDate());
+                        data.set(pPath +".dUrl", dUrl);
+                        data.set(pPath +".contentLength", contentLength);
+                    }else{
+                        // 更新数据
+                        data.set(pPath +".time", nowDate());
+                        // 检查数据差异
+                        int i = 0;
+                        if(!data.getString(pPath + ".dUrl", "").equals(dUrl)){i++;}
+                        if(data.getInt(pPath +".contentLength", -1) != contentLength){i++;}
+                        if(i == 0){
+                            outInfo("[] 文件已是最新版本");
+                            _fail --;
+                            continue;
+                        }
+                    }
+
                     if(!downloadFile(dUrl, c_tempPath)){
                         getLogger().warning(_nowFile +"下载文件时出现异常, 将跳过此更新");
                         new File(c_tempPath).delete();
@@ -267,6 +317,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     _nowParser = "[???] ";
                     _fail --;
                 }
+
+                saveDate();
 
                 getLogger().info("[## 更新全部完成 ##]");
                 getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
@@ -508,7 +560,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         }
 
         // 下载文件到指定位置, 并使用指定文件名
-        public boolean downloadFile(String url, String path) {
+        public boolean downloadFile(String url, String path){
             new File(path).delete(); // 删除可能存在的旧文件
             HttpURLConnection cxn = getHttpCxn(url);
             if(cxn == null){return false;}
@@ -525,11 +577,25 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return false;
         }
 
+        // 通过 HEAD 请求获取 Content-Length 字段
+        public int getContentLength(String url){
+            int cl = -1;
+            try {
+                HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
+                cxn.setRequestMethod("HEAD");
+                cl = cxn.getContentLength();
+                cxn.disconnect();
+            } catch (Exception e) {
+                getLogger().warning(_nowFile +"[HTTP.HEAD] "+ e.getMessage());
+            }
+            return cl;
+        }
+
         // 获取 HTTP 连接
-        public HttpURLConnection getHttpCxn(String url) {
+        public HttpURLConnection getHttpCxn(String url){
             HttpURLConnection cxn = null;
             try {
-                cxn = (HttpURLConnection) new URL(url).openConnection();
+                cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("GET");
                 // 填充请求头数据
                 List<?> list = (List<?>) getConfig().get("setRequestProperty");
@@ -556,6 +622,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             if(debugLog){
                 getLogger().info(_nowFile + t);
             }
+        }
+
+        // 获取已格式化的时间
+        public String nowDate(){
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            return now.format(formatter);
         }
     }
 }
