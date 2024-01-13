@@ -41,6 +41,7 @@ import java.util.zip.ZipException;
 
 public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
     boolean lock = false;
+    boolean awaitReload = false;
     boolean debugLog = true;
     Timer timer = null;
 
@@ -146,6 +147,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 重载配置
         else if(args[0].equals("reload")){
+            if(lock){
+                awaitReload = true;
+                sender.sendMessage("[AUP] 当前正在运行更新, 配置重载将被推迟");
+                return true;
+            }
             loadConfig();
             sender.sendMessage("[AUP] 已完成重载");
             setTimer();
@@ -334,6 +340,14 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");
 
                 lock = false;
+
+                // 运行被推迟的配置重载
+                if(awaitReload){
+                    awaitReload = false;
+                    loadConfig();
+                    getLogger().info("[AUP] 已完成重载");
+                    setTimer();
+                }
             });
             executor.shutdown();
         }
