@@ -250,11 +250,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     outInfo(dUrl);
 
                     // 启用上一个更新记录与检查
+                    int contentLength = -1;
+                    String pPath = "";
                     if(getConfig().getBoolean("enablePreviousUpdate", true)){
                         // 获取文件大小
-                        int contentLength = getContentLength(dUrl);
+                        contentLength = getContentLength(dUrl);
                         // 是否与上一个版本相同
-                        String pPath = "previous." + li.toString().hashCode();
+                        pPath = "previous." + li.toString().hashCode();
                         if (temp.get(pPath) != null) {
                             // 检查数据差异
                             int i = 0;
@@ -266,11 +268,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                                 continue;
                             }
                         }
-                        // 更新数据
-                        temp.set(pPath + ".file", c_file);
-                        temp.set(pPath + ".time", nowDate());
-                        temp.set(pPath + ".dUrl", dUrl);
-                        temp.set(pPath + ".contentLength", contentLength);
                     }
 
                     if(!downloadFile(dUrl, c_tempPath)){
@@ -288,6 +285,15 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新, 将跳过此更新");
                         new File(c_tempPath).delete();
                         continue;
+                    }
+
+                    // 此时已确保文件(信息)正常
+                    if(getConfig().getBoolean("enablePreviousUpdate", true)){
+                        // 更新数据
+                        temp.set(pPath + ".file", c_file);
+                        temp.set(pPath + ".time", nowDate());
+                        temp.set(pPath + ".dUrl", dUrl);
+                        temp.set(pPath + ".contentLength", contentLength);
                     }
 
                     // 在这里实现运行系统命令的功能
