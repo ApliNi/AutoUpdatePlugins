@@ -257,19 +257,17 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 //                    outInfo(dUrl);
 
                     // 启用上一个更新记录与检查
-                    int contentLength = -1;
+                    String feature = "";
                     String pPath = "";
                     if(getConfig().getBoolean("enablePreviousUpdate", true)){
                         // 获取文件大小
-                        contentLength = getContentLength(dUrl);
+                        feature = getFeature(dUrl);
                         // 是否与上一个版本相同
                         pPath = "previous." + li.toString().hashCode();
                         if (temp.get(pPath) != null) {
                             // 检查数据差异
-                            int i = 0;
-                            if (!temp.getString(pPath + ".dUrl", "").equals(dUrl)) {i++;}
-                            if (temp.getInt(pPath + ".contentLength", -1) != contentLength) {i++;}
-                            if (i == 0) {
+                            if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
+                                    temp.getString(pPath + ".feature", "").equals(feature)){
                                 outInfo("[缓存] 文件已是最新版本");
                                 _fail--;
                                 continue;
@@ -300,7 +298,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         temp.set(pPath + ".file", c_file);
                         temp.set(pPath + ".time", nowDate());
                         temp.set(pPath + ".dUrl", dUrl);
-                        temp.set(pPath + ".contentLength", contentLength);
+                        temp.set(pPath + ".feature", feature);
                     }
 
                     // 在这里实现运行系统命令的功能
@@ -601,19 +599,28 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return false;
         }
 
-        // 通过 HEAD 请求获取 Content-Length 字段
-        public int getContentLength(String url){
-            int cl = -1;
+        // 通过 HEAD 请求获取一些特征信息
+        public String getFeature(String url){
+            String out = "_"+ nowDate().hashCode();
             try {
                 HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("HEAD");
                 _allRequests ++;
-                cl = cxn.getContentLength();
+
+                int cl = cxn.getContentLength();
+                String lh = cxn.getHeaderField("Location");
+
+                if(cl != -1) {
+                    out = "cl_" + cl;
+                }
+                else if(lh != null){
+                    out = "lh_"+ lh.hashCode();
+                }
                 cxn.disconnect();
             } catch (Exception e) {
                 getLogger().warning(_nowFile +"[HTTP.HEAD] "+ e.getMessage());
             }
-            return cl;
+            return out;
         }
 
         // 获取 HTTP 连接
