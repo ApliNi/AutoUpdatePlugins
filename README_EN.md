@@ -1,4 +1,4 @@
-## AutoUpdatePlugins `v2.0`
+## AutoUpdatePlugins
 Better auto update plugins
 
 ---
