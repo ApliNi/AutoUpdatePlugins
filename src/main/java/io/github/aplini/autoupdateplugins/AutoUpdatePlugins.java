@@ -44,8 +44,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     boolean debugLog = true;
     Timer timer = null;
 
-    File dataFile;
-    FileConfiguration data;
+    File tempFile;
+    FileConfiguration temp;
 
     @Override
     public void onEnable() {
@@ -91,7 +91,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
     public void saveDate(){
         try {
-            data.save(dataFile);
+            temp.save(tempFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -108,10 +108,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         reloadConfig();
         debugLog = getConfig().getBoolean("debugLog", true);
 
-        dataFile = new File("./plugins/AutoUpdatePlugins/data.yml");
-        data = YamlConfiguration.loadConfiguration(dataFile);
-        if(data.get("previous") == null){
-            data.set("previous", new HashMap<>());
+        tempFile = new File("./plugins/AutoUpdatePlugins/temp.yml");
+        temp = YamlConfiguration.loadConfiguration(tempFile);
+        if(temp.get("previous") == null){
+            temp.set("previous", new HashMap<>());
         }
         saveDate();
     }
@@ -255,11 +255,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         int contentLength = getContentLength(dUrl);
                         // 是否与上一个版本相同
                         String pPath = "previous." + li.toString().hashCode();
-                        if (data.get(pPath) != null) {
+                        if (temp.get(pPath) != null) {
                             // 检查数据差异
                             int i = 0;
-                            if (!data.getString(pPath + ".dUrl", "").equals(dUrl)) {i++;}
-                            if (data.getInt(pPath + ".contentLength", -1) != contentLength) {i++;}
+                            if (!temp.getString(pPath + ".dUrl", "").equals(dUrl)) {i++;}
+                            if (temp.getInt(pPath + ".contentLength", -1) != contentLength) {i++;}
                             if (i == 0) {
                                 outInfo("[缓存] 文件已是最新版本");
                                 _fail--;
@@ -267,10 +267,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                             }
                         }
                         // 更新数据
-                        data.set(pPath + ".file", c_file);
-                        data.set(pPath + ".time", nowDate());
-                        data.set(pPath + ".dUrl", dUrl);
-                        data.set(pPath + ".contentLength", contentLength);
+                        temp.set(pPath + ".file", c_file);
+                        temp.set(pPath + ".time", nowDate());
+                        temp.set(pPath + ".dUrl", dUrl);
+                        temp.set(pPath + ".contentLength", contentLength);
                     }
 
                     if(!downloadFile(dUrl, c_tempPath)){
