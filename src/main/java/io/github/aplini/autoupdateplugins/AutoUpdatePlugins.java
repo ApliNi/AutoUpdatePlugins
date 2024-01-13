@@ -231,6 +231,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning("更新列表配置错误? 缺少基本配置");
                         continue;
                     }
+                    c_url = URLEncoder.encode(c_url, StandardCharsets.UTF_8);
+
                     _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
                     c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
 
@@ -248,6 +250,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
                         continue;
                     }
+                    dUrl = URLEncoder.encode(dUrl, StandardCharsets.UTF_8);
 
                     // 获取文件大小
                     int contentLength = getContentLength(dUrl);
@@ -267,7 +270,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         if(!data.getString(pPath + ".dUrl", "").equals(dUrl)){i++;}
                         if(data.getInt(pPath +".contentLength", -1) != contentLength){i++;}
                         if(i == 0){
-                            outInfo("[] 文件已是最新版本");
+                            outInfo("[缓存] 文件已是最新版本");
                             _fail --;
                             continue;
                         }
@@ -583,7 +586,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public int getContentLength(String url){
             int cl = -1;
             try {
-                HttpURLConnection cxn = (HttpURLConnection) new URI(URLEncoder.encode(url, StandardCharsets.UTF_8)).toURL().openConnection();
+                HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("HEAD");
                 cl = cxn.getContentLength();
                 cxn.disconnect();
@@ -597,7 +600,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public HttpURLConnection getHttpCxn(String url){
             HttpURLConnection cxn = null;
             try {
-                cxn = (HttpURLConnection) new URI(URLEncoder.encode(url, StandardCharsets.UTF_8)).toURL().openConnection();
+                cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
                 cxn.setRequestMethod("GET");
                 // 填充请求头数据
                 List<?> list = (List<?>) getConfig().get("setRequestProperty");
