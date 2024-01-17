@@ -695,7 +695,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         break;
                     case "MARK":
                         // 一些新版本的控制台似乎很难显示颜色
-                        Bukkit.getConsoleSender().sendMessage(level.color + _nowFile + text);
+                        Bukkit.getConsoleSender().sendMessage(level.color +"[AUP] "+ _nowFile + text);
                         break;
                     case "WARN", "NET_WARN":
                         getLogger().warning(_nowFile + text);
