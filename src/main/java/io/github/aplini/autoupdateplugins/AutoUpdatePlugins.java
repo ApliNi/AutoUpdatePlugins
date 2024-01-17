@@ -1,6 +1,7 @@
 package io.github.aplini.autoupdateplugins;
 
 import com.google.gson.Gson;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -683,7 +684,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         getLogger().info(text);
                         break;
                     case "MARK":
-                        getLogger().info(level.color + _nowFile + text);
+                        // 一些新版本的控制台似乎很难显示颜色
+                        Bukkit.getConsoleSender().sendMessage(level.color + _nowFile + text);
                         break;
                     case "WARN", "NET_WARN":
                         getLogger().warning(_nowFile + text);
