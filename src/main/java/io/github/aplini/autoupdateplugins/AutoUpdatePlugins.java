@@ -42,11 +42,12 @@ import java.util.zip.ZipException;
 public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
     boolean lock = false;
     boolean awaitReload = false;
-    boolean debugLog = true;
     Timer timer = null;
 
     File tempFile;
     FileConfiguration temp;
+
+    List<String> logList = new ArrayList<>();
 
     @Override
     public void onEnable() {
@@ -59,8 +60,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         if(getConfig().getBoolean("bStats", true)){
             new Metrics(this, 20629);
         }
-
-        debugLog = getConfig().getBoolean("debugLog", true);
 
         // 禁用证书验证
         if(getConfig().getBoolean("disableCertificateVerification", false)) {
@@ -107,7 +106,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
     public void loadConfig(){
         reloadConfig();
-        debugLog = getConfig().getBoolean("debugLog", true);
 
         tempFile = new File("./plugins/AutoUpdatePlugins/temp.yml");
         temp = YamlConfiguration.loadConfiguration(tempFile);
@@ -142,6 +140,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             sender.sendMessage("  指令: ");
             sender.sendMessage("    - /aup reload - 重载配置");
             sender.sendMessage("    - /aup update - 运行更新");
+            sender.sendMessage("    - /aup log - 查看完整日志");
             return true;
         }
 
@@ -166,6 +165,15 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             }
             sender.sendMessage("[AUP] 更新开始运行!");
             new Timer().schedule(new updatePlugins(), 0);
+            return true;
+        }
+
+        // 查看日志
+        else if(args[0].equals("log")){
+            sender.sendMessage("[AUP] 完整日志:");
+            for(String li : logList){
+                sender.sendMessage("  | " + li);
+            }
             return true;
         }
         return false;
@@ -204,19 +212,20 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public void run() {
             // 防止重复运行
             if(lock && !getConfig().getBoolean("disableLook", false)){
-                getLogger().warning("### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###");
+                log(logLevel.WARN, "### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###");
                 return;
             }
             lock = true;
-            _startTime = System.nanoTime();
+            logList = new ArrayList<>();    // 清空上一份日志
+            _startTime = System.nanoTime(); // 记录运行时间
             // 新线程
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.submit(() -> {
-                getLogger().info("[## 开始运行自动更新 ##]");
+                log(logLevel.INFO, "[## 开始运行自动更新 ##]");
 
                 List<?> list = (List<?>) getConfig().get("list");
                 if(list == null){
-                    getLogger().warning("更新列表配置错误? ");
+                    log(logLevel.WARN, "更新列表配置错误? ");
                     return;
                 }
 
@@ -225,7 +234,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     Map<?, ?> li = (Map<?, ?>) _li;
                     if(li == null){
-                        getLogger().warning("更新列表配置错误? 项目为空");
+                        log(logLevel.WARN, "更新列表配置错误? 项目为空");
                         continue;
                     }
 
@@ -233,7 +242,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     c_file = (String) SEL(li.get("file"), "");
                     c_url = ((String) SEL(li.get("url"), "")).trim();
                     if(c_file.isEmpty() || c_url.isEmpty()){
-                        getLogger().warning("更新列表配置错误? 缺少基本配置");
+                        log(logLevel.WARN, "更新列表配置错误? 缺少基本配置");
                         continue;
                     }
 
@@ -248,10 +257,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
 
                     // 下载文件到缓存目录
-                    outInfo("正在检查更新...");
+                    log(logLevel.DEBUG, "正在检查更新...");
                     String dUrl = getFileUrl(c_url, c_get);
                     if(dUrl == null){
-                        getLogger().warning(_nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
+                        log(logLevel.WARN, _nowFile + _nowParser +"解析文件直链时出现错误, 将跳过此更新");
                         continue;
                     }
                     dUrl = checkURL(dUrl);
@@ -269,7 +278,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                             // 检查数据差异
                             if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
                                     temp.getString(pPath + ".feature", "").equals(feature)){
-                                outInfo("[缓存] 文件已是最新版本");
+                                log(logLevel.MARK, "[缓存] 文件已是最新版本");
                                 _fail--;
                                 continue;
                             }
@@ -277,7 +286,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
 
                     if(!downloadFile(dUrl, c_tempPath)){
-                        getLogger().warning(_nowFile +"下载文件时出现异常, 将跳过此更新");
+                        log(logLevel.WARN, "下载文件时出现异常, 将跳过此更新");
                         delFile(c_tempPath);
                         continue;
                     }
@@ -288,7 +297,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                     // 文件完整性检查
                     if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
-                        getLogger().warning(_nowFile +"[Zip 完整性检查] 文件不完整, 下载链接可能已更新, 将跳过此更新");
+                        log(logLevel.WARN, "[Zip 完整性检查] 文件不完整, 将跳过此更新");
                         delFile(c_tempPath);
                         continue;
                     }
@@ -308,7 +317,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String tempFileHas = fileHash(c_tempPath);
                     String updatePathFileHas = fileHash(c_updatePath);
                     if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
-                        outInfo("文件已是最新版本");
+                        log(logLevel.MARK, "文件已是最新版本");
                         _fail --;
                         delFile(c_tempPath);
                         continue;
@@ -321,11 +330,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     try {
                         Files.move(Path.of(c_tempPath), Path.of(c_updatePath), StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
-                        getLogger().warning(e.getMessage());
+                        log(logLevel.WARN, e.getMessage());
                     }
 
                     // 更新完成, 并显示文件大小变化
-                    outInfo("更新完成 ["+ String.format("%.2f", oldFileSize / 1048576) +"MB] -> ["+ String.format("%.2f", fileSize / 1048576) +"MB]");
+                    log(logLevel.DEBUG, "更新完成 ["+ String.format("%.2f", oldFileSize / 1048576) +"MB] -> ["+ String.format("%.2f", fileSize / 1048576) +"MB]");
                     _success ++;
 
                     _nowFile = "[???] ";
@@ -335,15 +344,15 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 saveDate();
 
-                getLogger().info("[## 更新全部完成 ##]");
-                getLogger().info("  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
+                log(logLevel.INFO, "[## 更新全部完成 ##]");
+                log(logLevel.INFO, "  - 耗时: "+ Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0) +" 秒");
+
                 String st = "  - ";
                 if(_fail != 0){st += "失败: "+ _fail +", ";}
                 if(_success != 0){st += "更新: "+ _success +", ";}
-                st += "完成: "+ list.size();
-                if(_fail != 0){getLogger().warning(st);}else{getLogger().info(st);}
-                if(_allRequests != 0){getLogger().info("  - 网络请求: "+ _allRequests);}
-                if(_allFileSize != 0){getLogger().info("  - 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");}
+                log(logLevel.INFO, st +"完成: "+ list.size());
+
+                log(logLevel.INFO, "  - 网络请求: "+ _allRequests +", 下载文件: "+ String.format("%.2f", _allFileSize / 1048576) +"MB");
 
                 lock = false;
 
@@ -383,7 +392,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 byte[] hash = MessageDigest.getInstance("MD5").digest(data);
                 return new BigInteger(1, hash).toString(16);
             } catch (Exception e) {
-//                getLogger().warning(e.getMessage()); // 文件不存在时会输出异常
+//                outInfo(logLevel.WARN, e.getMessage()); // 文件不存在时会输出异常
             }
             return "null";
         }
@@ -419,14 +428,14 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("name");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("browser_download_url");
-                            outInfo(_nowParser +"找到版本: "+ dUrl);
+                            log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
-                    getLogger().warning(_nowFile +"[Github] 没有匹配的文件: "+ url);
+                    log(logLevel.WARN, "[Github] 没有匹配的文件: "+ url);
                     return null;
                 }
-                getLogger().warning(_nowFile +"[Github] 未找到存储库路径: "+ url);
+                log(logLevel.WARN, "[Github] 未找到存储库路径: "+ url);
                 return null;
             }
 
@@ -443,11 +452,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     String fileName = (String) li.get("fileName");
                     if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                         String dUrl = url +"/lastSuccessfulBuild/artifact/"+ li.get("relativePath");
-                        outInfo(_nowParser +"找到版本: "+ dUrl);
+                        log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                         return dUrl;
                     }
                 }
-                getLogger().warning(_nowFile +"[Jenkins] 没有匹配的文件: "+ url);
+                log(logLevel.WARN, "[Jenkins] 没有匹配的文件: "+ url);
                 return null;
             }
 
@@ -457,10 +466,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 Matcher matcher = Pattern.compile("([0-9]+)$").matcher(url);
                 if(matcher.find()){
                     String dUrl = "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
-                    outInfo(_nowParser +"找到版本: "+ dUrl);
+                    log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                     return dUrl;
                 }
-                getLogger().warning(_nowFile +"[Spigot] URL 解析错误, 不包含插件 ID?: "+ url);
+                log(logLevel.WARN, "[Spigot] URL 解析错误, 不包含插件 ID?: "+ url);
                 return null;
             }
 
@@ -480,21 +489,21 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         String fileName = (String) li.get("filename");
                         if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
                             String dUrl = (String) li.get("url");
-                            outInfo(_nowParser +"找到版本: "+ dUrl);
+                            log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                             return dUrl;
                         }
                     }
-                    getLogger().warning(_nowFile +"[Modrinth] 没有匹配的文件: "+ url);
+                    log(logLevel.WARN, "[Modrinth] 没有匹配的文件: "+ url);
                     return null;
                 }
-                getLogger().warning(_nowFile +"[Modrinth] URL 解析错误, 未找到项目名称: "+ url);
+                log(logLevel.WARN, "[Modrinth] URL 解析错误, 未找到项目名称: "+ url);
                 return null;
             }
 
             else if(url.contains("://dev.bukkit.org/")){ // Bukkit 页面
                 _nowParser = "[Bukkit] ";
                 String dUrl = url +"/files/latest";
-                outInfo(_nowParser +"找到版本: "+ dUrl);
+                log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                 return dUrl;
             }
 
@@ -512,10 +521,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
 
                     String dUrl = "https://builds.guizhanss.com/r2"+ matcher.group(0) +"/"+ map.get("target");
-                    outInfo(_nowParser +"找到版本: "+ dUrl);
+                    log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                     return dUrl;
                 }
-                getLogger().warning(_nowFile + _nowParser +"未找到存储库路径: "+ url);
+                log(logLevel.WARN, _nowParser +"未找到存储库路径: "+ url);
                 return null;
             }
 
@@ -533,16 +542,16 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, ArrayList.class);
                     Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
                     String dUrl = (String) map.get("downloadUrl");
-                    outInfo(_nowParser +"找到版本: "+ dUrl);
+                    log(logLevel.DEBUG, _nowParser +"找到版本: "+ dUrl);
                     return dUrl;
                 }
-                getLogger().warning(_nowFile + _nowParser +"未找到项目 ID: "+ url);
+                log(logLevel.WARN, _nowParser +"未找到项目 ID: "+ url);
                 return null;
             }
 
             else{ // 没有匹配的项
                 _nowParser = "[URL] ";
-                outInfo(_nowParser + _url);
+                log(logLevel.DEBUG, _nowParser + _url);
                 return _url;
             }
         }
@@ -581,7 +590,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 cxn.disconnect();
                 return String.valueOf(stringBuilder);
             } catch (Exception e) {
-                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
+                log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
             }
             cxn.disconnect();
             return null;
@@ -599,7 +608,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 cxn.disconnect();
                 return true;
             } catch (Exception e) {
-                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
+                log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
             }
             cxn.disconnect();
             return false;
@@ -617,14 +626,14 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 String lh = cxn.getHeaderField("Location");
 
                 if(cl != -1) {
-                    out = "cl_" + cl;
+                    out = "cl_"+ cl;
                 }
                 else if(lh != null){
                     out = "lh_"+ lh.hashCode();
                 }
                 cxn.disconnect();
             } catch (Exception e) {
-                getLogger().warning(_nowFile +"[HTTP.HEAD] "+ e.getMessage());
+                log(logLevel.NET_WARN, "[HTTP.HEAD] "+ e.getMessage());
             }
             return out;
         }
@@ -648,18 +657,61 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     return cxn;
                 }
                 cxn.disconnect();
-                getLogger().warning(_nowFile +"[HTTP] 请求失败? ("+ cxn.getResponseCode() +"): "+ url);
+                log(logLevel.NET_WARN, "[HTTP] 请求失败? ("+ cxn.getResponseCode() +"): "+ url);
             } catch (Exception e) {
-                getLogger().warning(_nowFile +"[HTTP] "+ e.getMessage());
+                log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
             }
             if(cxn != null){cxn.disconnect();}
             return null;
         }
 
         // 在插件更新过程中输出尽可能详细的日志
-        public void outInfo(String t) {
-            if(debugLog){
-                getLogger().info(_nowFile + t);
+        public void log(logLevel level, String text){
+
+            // 获取用户启用了哪些日志等级
+            List<String> userLogLevel = getConfig().getStringList("logLevel");
+            if(userLogLevel.isEmpty()){
+                userLogLevel = List.of("DEBUG", "MARK", "INFO", "WARN", "NET_WARN");
+            }
+
+            if(userLogLevel.contains(level.name)){
+                switch(level.name){
+                    case "DEBUG":
+                        getLogger().info(_nowFile + text);
+                        break;
+                    case "INFO":
+                        getLogger().info(text);
+                        break;
+                    case "MARK":
+                        getLogger().info(level.color + _nowFile + text);
+                        break;
+                    case "WARN", "NET_WARN":
+                        getLogger().warning(_nowFile + text);
+                        break;
+                }
+            }
+
+            // 根据日志等级添加样式代码, 并记录到 logList
+            // 非 INFO 日志添加 _nowFile 文本
+            logList.add(level.color + (level.name.equals("INFO") ? "" : _nowFile) +  text);
+        }
+        enum logLevel {
+            // 允许被忽略的 INFO
+            DEBUG("", "DEBUG"),
+            // 不可被忽略的 INFO
+            INFO("", "INFO"),
+            // 用于标记任务完成
+            MARK("§a", "MARK"),
+            // 警告
+            WARN("§e", "WARN"),
+            // 网络请求模式警告
+            NET_WARN("§e", "NET_WARN"),
+            ;
+            private final String color;
+            private final String name;
+            logLevel(String color, String name) {
+                this.color = color;
+                this.name = name;
             }
         }
 
@@ -679,7 +731,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         .replace(" ", "%20"))
                         .toASCIIString();
             } catch (URISyntaxException e) {
-                getLogger().warning(_nowFile +"[URI] URL 无效或不规范: "+ url);
+                log(logLevel.WARN, "[URI] URL 无效或不规范: "+ url);
                 return null;
             }
         }
@@ -687,7 +739,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         // 删除文件
         public void delFile(String path){
             new File(path).delete();
-            // getLogger().warning(_nowFile +"[FILE] 删除文件失败: "+ path);
+            // outInfo(logLevel.WARN, _nowFile +"[FILE] 删除文件失败: "+ path);
         }
     }
 }

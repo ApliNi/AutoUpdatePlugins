@@ -9,6 +9,7 @@
 - `/aup` 显示插件信息
     - `/aup reload` 重新加载配置
     - `/aup update` 手动运行更新
+    - `/aup log` 查看完整日志
 
 
 - [x] 使用 `update` 目录进行插件更新
@@ -22,6 +23,7 @@
 - [x] 不重复安装更新
 - [x] 每个更新任务可以单独添加配置
 - [x] 可配置的证书验证
+- [x] 自定义输出日志等级
 - [ ] 支持更新时运行系统命令
 
 
@@ -47,9 +49,8 @@
 [WARN]: [AUP] [Dynmap网页地图.jar] [CurseForge] 解析文件直链时出现错误, 将跳过此更新
 [INFO]: [AUP] [## 更新全部完成 ##]
 [INFO]: [AUP]   - 耗时: 268 秒
-[WARN]: [AUP]   - 失败: 2, 更新: 22, 完成: 24
-[INFO]: [AUP]   - 网络请求: 48
-[INFO]: [AUP]   - 下载文件: 40.10MB
+[INFO]: [AUP]   - 失败: 2, 更新: 22, 完成: 24
+[INFO]: [AUP]   - 网络请求: 48, 下载文件: 40.10MB
 ```
 
 
@@ -91,7 +92,15 @@ setRequestProperty:
     value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 # 显示完整的更新日志, 可在测试完成后关闭, 关闭后依然会显示错误/警告/开始和完成信息
-debugLog: true
+# debugLog: true
+
+# 启用哪些日志等级
+logLevel:
+  - "DEBUG"   # 用于调试, 可在测试完成后注释掉
+  - "MARK"    # 与 DEBUG 相同, 显示绿色, 用于标记任务完成
+  - "INFO"    # 输出日志
+  - "WARN"    # 输出警告
+  - "NET_WARN"  # 网络请求模块的警告
 
 # 隐藏配置, 无需修改
 #disableLook: false

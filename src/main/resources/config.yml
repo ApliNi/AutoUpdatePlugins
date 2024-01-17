@@ -33,8 +33,13 @@ setRequestProperty:
   - name: 'User-Agent'
     value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
-# 显示完整的更新日志, 可在测试完成后关闭, 关闭后依然会显示错误/警告/开始和完成信息
-debugLog: true
+# 启用哪些日志等级
+logLevel:
+  - "DEBUG"   # 用于调试, 可在测试完成后注释掉
+  - "MARK"    # 与 DEBUG 相同, 显示绿色, 用于标记任务完成
+  - "INFO"    # 输出日志
+  - "WARN"    # 输出警告
+  - "NET_WARN"  # 网络请求模块的警告
 
 # 隐藏配置, 无需修改
 #disableLook: false

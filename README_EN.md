@@ -20,6 +20,7 @@ Better auto update plugins
 - [x] Do not install updates repeatedly
 - [x] Configuration can be added individually for each update task
 - [x] Configurable certificate verification
+- [x] Custom output log level
 
 
 [[Usage statistics]](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629)
