@@ -106,12 +106,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 检查过时的配置
         if(getConfig().getBoolean("debugLog", false)){
-            getLogger().warning("[AUP] `debugLog` 配置已弃用, 请使用 `logLevel` - 启用哪些日志等级");
+            getLogger().warning("`debugLog` 配置已弃用, 请使用 `logLevel` - 启用哪些日志等级");
         }
 
         // 检查缺失的配置
         if(getConfig().get("setRequestProperty") == null){
-            getLogger().warning("[AUP] 缺少配置 `setRequestProperty` - HTTP 请求中编辑请求头");
+            getLogger().warning("缺少配置 `setRequestProperty` - HTTP 请求中编辑请求头");
         }
     }
 
