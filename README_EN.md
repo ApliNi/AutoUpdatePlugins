@@ -1,5 +1,4 @@
 ## AutoUpdatePlugins
-Better AutoUpdate Plugins
 
 [[中文文档]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README.md) -- [[English document]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README_EN.md)
 

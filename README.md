@@ -1,7 +1,8 @@
 ## AutoUpdatePlugins
-更好的自动更新插件
 
 [[中文文档]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README.md) -- [[English document]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README_EN.md)
+
+更好的自动更新插件
 
 下载: https://modrinth.com/plugin/AutoUpdatePlugins
 
