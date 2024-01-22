@@ -112,6 +112,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         if(getConfig().get("setRequestProperty") == null){
             getLogger().warning("缺少配置 `setRequestProperty` - HTTP 请求中编辑请求头");
         }
+        if(getConfig().get("message") == null){
+            getLogger().warning("缺少配置 `message` - 插件消息配置");
+        }
     }
 
     public void loadConfig(){
