@@ -1,6 +1,8 @@
 ## AutoUpdatePlugins
 更好的自动更新插件
 
+[[中文文档]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README.md) -- [[English document]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README_EN.md)
+
 下载: https://modrinth.com/plugin/AutoUpdatePlugins
 
 ---
@@ -14,17 +16,17 @@
 
 - [x] 使用 `update` 目录进行插件更新
 - [x] 根据插件发布页自动找到下载链接
-  - `Github, Jenkins, Spigot, Modrinth, Bukkit, 鬼斩构建站 v2`
-    - 支持下载 Github 中的预发布版本
+  - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, 鬼斩构建站 v2`
+    - 支持下载 GitHub 中的预发布版本
 - [x] 支持匹配相同发布下的不同文件
-  - `Github, Jenkins, Modrinth`
+  - `GitHub, Jenkins, Modrinth`
 - [x] 支持文件完整性检查
 - [x] 缓存上一个更新的信息, 不重复下载文件
 - [x] 不重复安装更新
 - [x] 每个更新任务可以单独添加配置
 - [x] 可配置的证书验证
 - [x] 自定义输出日志等级
-- [ ] 多语言支持!
+- [x] 多语言支持!
 - [ ] 支持更新时运行系统命令
 
 
@@ -92,9 +94,6 @@ setRequestProperty:
   - name: 'User-Agent'
     value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
-# 显示完整的更新日志, 可在测试完成后关闭, 关闭后依然会显示错误/警告/开始和完成信息
-# debugLog: true
-
 # 启用哪些日志等级
 logLevel:
   - "DEBUG"   # 用于调试, 可在测试完成后注释掉
@@ -103,15 +102,11 @@ logLevel:
   - "WARN"    # 输出警告
   - "NET_WARN"  # 网络请求模块的警告
 
-# 隐藏配置, 无需修改
-#disableLook: false
-#disableUpdateCheckIntervalTooLow: false
-#bStats: true
 
 # 插件列表
-# URL 支持自动下载 `Github, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
-# 其中 `Github, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
-# Github 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
+# URL 支持自动下载 `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
+# 其中 `GitHub, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
+# GitHub 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
 
   - file: 'AutoUpdatePlugins自动更新.jar'
@@ -121,7 +116,7 @@ list:
 
 #  - file: 'EssentialsX.jar' # Github
 #    url: https://github.com/EssentialsX/Essentials
-#    get: 'EssentialsX-([0-9.]+)\.jar'  # 如果 Github/Jenkins 发布中存在多个文件, 则需要匹配其中一个, 否则下载第一个 (使用正则表达式
+#    get: 'EssentialsX-([0-9.]+)\.jar'  # 如果 GitHub/Jenkins 发布中存在多个文件, 则需要匹配其中一个, 否则下载第一个 (使用正则表达式
 
 #  - file: 'EssentialsXChat.jar' # 匹配相同发布中的不同文件
 #    url: https://github.com/EssentialsX/Essentials
@@ -160,14 +155,14 @@ list:
 
 
 ### list 中的所有可用配置 ###
-#  String file;              // 文件名称
-#  String url;               // 下载链接
-#  String tempPath;          // 下载缓存路径, 默认使用全局配置
-#  String updatePath;        // 更新存放路径, 默认使用全局配置
-#  String filePath;          // 最终安装路径, 默认使用全局配置
-#  String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
-#  boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
-#  boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
+# String file;              // 文件名称
+# String url;               // 下载链接
+# String tempPath;          // 下载缓存路径, 默认使用全局配置
+# String updatePath;        // 更新存放路径, 默认使用全局配置
+# String filePath;          // 最终安装路径, 默认使用全局配置
+# String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 GitHub, Jenkins, Modrinth
+# boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+# boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
 
 ```
 

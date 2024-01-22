@@ -41,15 +41,11 @@ logLevel:
   - "WARN"    # 输出警告
   - "NET_WARN"  # 网络请求模块的警告
 
-# 隐藏配置, 无需修改
-#disableLook: false
-#disableUpdateCheckIntervalTooLow: false
-#bStats: true
 
 # 插件列表
-# URL 支持自动下载 `Github, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
-# 其中 `Github, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
-# Github 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
+# URL 支持自动下载 `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
+# 其中 `GitHub, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
+# GitHub 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
 
   - file: 'AutoUpdatePlugins自动更新.jar'
@@ -59,7 +55,7 @@ list:
 
 #  - file: 'EssentialsX.jar' # Github
 #    url: https://github.com/EssentialsX/Essentials
-#    get: 'EssentialsX-([0-9.]+)\.jar'  # 如果 Github/Jenkins 发布中存在多个文件, 则需要匹配其中一个, 否则下载第一个 (使用正则表达式
+#    get: 'EssentialsX-([0-9.]+)\.jar'  # 如果 GitHub/Jenkins 发布中存在多个文件, 则需要匹配其中一个, 否则下载第一个 (使用正则表达式
 
 #  - file: 'EssentialsXChat.jar' # 匹配相同发布中的不同文件
 #    url: https://github.com/EssentialsX/Essentials
@@ -98,11 +94,56 @@ list:
 
 
 ### list 中的所有可用配置 ###
-#  String file;              // 文件名称
-#  String url;               // 下载链接
-#  String tempPath;          // 下载缓存路径, 默认使用全局配置
-#  String updatePath;        // 更新存放路径, 默认使用全局配置
-#  String filePath;          // 最终安装路径, 默认使用全局配置
-#  String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
-#  boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
-#  boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
+# String file;              // 文件名称
+# String url;               // 下载链接
+# String tempPath;          // 下载缓存路径, 默认使用全局配置
+# String updatePath;        // 更新存放路径, 默认使用全局配置
+# String filePath;          // 最终安装路径, 默认使用全局配置
+# String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 GitHub, Jenkins, Modrinth
+# boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+# boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
+
+
+# 在这里编辑插件可能显示的消息
+message:
+  commandInfo: >-
+    IpacEL > AutoUpdatePlugins: 自动更新插件
+      指令:
+        - /aup reload - 重载配置
+        - /aup update - 运行更新
+        - /aup log - 查看完整日志
+  updateCheckIntervalTooLow: '### 更新检查间隔过低将造成性能问题! ###'
+  timer: '更新检查将在 %1 秒后运行, 并以每 %2 秒的间隔重复运行'
+  commandReloadOnUpdating: '当前正在运行更新, 配置重载将被推迟'
+  commandReloadOK: '已完成重载'
+  commandRepeatedRunUpdate: '已有一个未完成的更新正在运行'
+  commandUpdateStart: '更新开始运行!'
+  commandFullLog: '完整日志:'
+  repeatedRunUpdate: '### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###'
+  updateStart: '[## 开始运行自动更新 ##]'
+  configErrList: '更新列表配置错误? '
+  configErrUpdate: '更新列表配置错误? 项目为空'
+  configErrMissing: '更新列表配置错误? 缺少基本配置'
+  updateChecking: '正在检查更新...'
+  updateErrParsingDUrl: '解析文件直链时出现错误, 将跳过此更新'
+  updateTempAlreadyLatest: '[缓存] 文件已是最新版本'
+  updateErrDownload: '下载文件时出现异常, 将跳过此更新'
+  updateZipFileCheck: '[Zip 完整性检查] 文件不完整, 将跳过此更新'
+  updateFileAlreadyLatest: '文件已是最新版本'
+  updateFulSizeDifference: '更新完成 [%1MB] -> [%2MB]'
+  updateFul: '[## 更新全部完成 ##]'
+  updateFulTime: '耗时: %1 秒'
+  updateFulFail: '失败: %1, '
+  updateFulUpdate: '更新: %1, '
+  updateFulOK: '完成: %1'
+  updateFulNetRequest: '网络请求: %1, '
+  updateFulDownloadFile: '下载文件: %1MB'
+  logReloadOK: '已完成重载'
+  debugGetVersion: '找到版本: %1'
+  debugNoFileMatching: '没有匹配的文件: %1'
+  debugNoRepositoryPath: '未找到存储库路径: %1'
+  debugErrUrlResolveNoID: 'URL 解析错误, 不包含插件 ID?: %1'
+  debugErrUrlResolveNoName: 'URL 解析错误, 未找到项目名称: %1'
+  debugErrNoID: '未找到项目 ID: %1'
+  httpRequestFailed: '请求失败? (%1): %2'
+  urlInvalid: 'URL 无效或不规范: %1'

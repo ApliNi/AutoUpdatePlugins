@@ -1,64 +1,3 @@
-## AutoUpdatePlugins
-Better AutoUpdate Plugins
-
-[[中文文档]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README.md) -- [[English document]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README_EN.md)
-
-Download: https://modrinth.com/plugin/AutoUpdatePlugins
-
----
-
-## Functions and commands
-- `/aup` Show plugin information
-    - `/aup reload` Reload configuration
-    - `/aup update` Run update manually
-    - `/aup log` View full logs
-
-
-- [x] Using the `update` directory for plugin updates
-- [x] Automatically find download links based on plugin release page
-    - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, Ghost Chop Build Station v2`.
-        - Support downloading pre-releases from GitHub.
-- [x] Support matching different files under the same release
-    - `GitHub, Jenkins, Modrinth`.
-- [x] Support for file integrity checking
-- [x] Cache last update, no duplicate downloads.
-- [x] No duplicate installation of updates
-- [x] Each update task can be configured individually.
-- [x] Configurable certificate validation
-- [x] Customizable output log level
-- [x] Multi-language support!
-- [ ] Support for running system commands while updating
-
-
-[[Usage statistics]](https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629)
-<a href="https://bstats.org/plugin/bukkit/ApliNi-AutoUpdatePlugins/20629">![](https://bstats.org/signatures/bukkit/ApliNi-AutoUpdatePlugins.svg)</a>
-
-**运行日志**
-```yaml
-[INFO]: [AUP] The update check will run after 64 seconds and repeat every 14400 seconds.
-[INFO]: [AUP] [## Start running automatic updates ##]
-[INFO]: [AUP] [EssentialsX.jar] Updating...
-[INFO]: [AUP] [EssentialsX.jar] [Github] Version found: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsX-2.20.1. jar
-[INFO]: [AUP] [EssentialsX.jar] Update complete [1.17MB] -> [2.92MB]
-[INFO]: [AUP] [EssentialsXChat.jar] Updating...
-[INFO]: [AUP] [EssentialsXChat.jar] [Github] Version found: https://github.com/EssentialsX/Essentials/releases/download/2.20.1/EssentialsXChat- 2.20.1.jar
-[INFO]: [AUP] [EssentialsXChat.jar] Update complete [0.01MB] -> [0.01MB]
-[INFO]: [AUP] [CoreProtect.jar] Updating...
-[INFO]: [AUP] [CoreProtect.jar] [Modrinth] Version found: https://cdn.modrinth.com/data/Lu3KuzdV/versions/w3P6ufP1/CoreProtect-22.2.jar
-[INFO]: [AUP] [CoreProtect.jar] file is up to date!
-...
-[INFO]: [AUP] [Dynmap.jar] is being updated...
-[WARN]: [AUP] [Dynmap.jar] [HTTP] Request failed? (403): https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
-[WARN]: [AUP] [Dynmap.jar] [CurseForge] Error parsing direct file link, will skip this update.
-[INFO]: [AUP] [## Update all done ##]
-[INFO]: [AUP] - Time consumed: 268 seconds
-[INFO]: [AUP] - Failed: 2, Updated: 22, Completed: 24
-[INFO]: [AUP] - Network requests: 48, Downloaded files: 40.10MB
-```
-
-
-### 配置
-```yaml
 
 # How long to wait for the first update to run after the server has finished booting (seconds)
 startupDelay: 64
@@ -160,10 +99,51 @@ list:
 # String tempPath;          // download cache path, use global configuration by default
 # String updatePath;        // update path, used globally by default
 # String filePath;          // The final installation path, used globally by default.
-# String get;               // Regular expression to select the specified file, first one is selected by default. Github, Jenkins, Modrinth only.
+# String get;               // Regular expression to select the specified file, first one is selected by default. GitHub, Jenkins, Modrinth only.
 # boolean zipFileCheck;     // Enable zip file integrity checking, true by default.
 # boolean getPreRelease;    // Allow downloading of pre-releases, false by default. GitHub only.
 
-```
 
-Some of the features and code references are from project [NewAmazingPVP/AutoUpdatePlugins](https://github.com/NewAmazingPVP/AutoUpdatePlugins).
+# Edit the messages the plugin may display here
+message:
+  commandInfo: >-
+    IpacEL > AutoUpdatePlugins
+      command.
+        - /aup reload - reload configuration
+        - /aup update - run update
+        - /aup log - view full log
+  updateCheckIntervalTooLow: '#### Update check interval too low will cause performance problems! ###'
+  timer: 'The update check will run after %1 seconds and repeat at %2 second intervals'
+  commandReloadOnUpdating: 'Currently running update, configuration reload will be postponed'
+  commandReloadOK: 'Reload completed'
+  commandRepeatedRunUpdate: 'There is already an unfinished update running'
+  commandUpdateStart: 'Update is running!'
+  commandFullLog: 'Full log:'
+  repeatedRunUpdate: '### The update program started repeatedly or with errors? Trying to increase update check interval? ###'
+  updateStart: '[### Start running automatic updates ##]'
+  configErrList: 'Error configuring update list? '
+  configErrUpdate: 'Update list configuration error? Item is empty.'
+  configErrMissing: 'Error updating list configuration? Missing basic configuration'
+  updateChecking: 'Checking for updates...'
+  updateErrParsingDUrl: 'Error parsing direct file links, will skip this update'
+  updateTempAlreadyLatest: '[Cached] file is already latest'
+  updateErrDownload: 'Error downloading file, will skip this update'
+  updateZipFileCheck: '[Zip integrity check] File is incomplete, will skip this update'
+  updateFileAlreadyLatest: 'File is already latest'
+  updateFulSizeDifference: 'Update completed [%1MB] -> [%2MB]'
+  updateFul: '[## Update All Complete ##]'
+  updateFulTime: 'Time taken: %1 seconds'
+  updateFulFail: 'Failed: %1,'
+  updateFulUpdate: 'Update: %1,'
+  updateFulOK: 'Completed: %1'
+  updateFulNetRequest: 'Network Request: %1, '
+  updateFulDownloadFile: 'Downloading file: %1MB'
+  logReloadOK: 'Reload completed'
+  debugGetVersion: 'Found version: %1'
+  debugNoFileMatching: 'No file matching: %1'
+  debugNoRepositoryPath: 'Repository path not found: %1'
+  debugErrUrlResolveNoID: 'URL resolving error, plugin ID not included?'
+  debugErrUrlResolveNoName: 'URL resolution error, project name not found: %1'
+  debugErrNoID: 'Project ID not found: %1'
+  httpRequestFailed: 'Request failed? (%1): %2'
+  urlInvalid: 'URL is invalid or irregular: %1'
