@@ -29,6 +29,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
 - [x] 每个更新任务可以单独添加配置
 - [x] 可配置的证书验证
 - [x] 自定义输出日志等级
+- [ ] 多语言支持!
 - [ ] 支持更新时运行系统命令
 
 
@@ -169,7 +170,7 @@ list:
 #  String tempPath;          // 下载缓存路径, 默认使用全局配置
 #  String updatePath;        // 更新存放路径, 默认使用全局配置
 #  String filePath;          // 最终安装路径, 默认使用全局配置
-#  String get;               // 选择发行版本的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
+#  String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 Github, Jenkins, Modrinth
 #  boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
 #  boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 Github
 
