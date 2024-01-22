@@ -1,5 +1,6 @@
 package io.github.aplini.autoupdateplugins;
 
+import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -86,8 +87,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         }
     }
-    @Override
-    public void onDisable() {}
 
 
     public void saveDate(){
@@ -116,8 +115,28 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     }
 
     public void loadConfig(){
-        loadMessage();
+        // 导出语言文件
+        List<String> locales = List.of("config_en.yml");
+        getPath("./plugins/AutoUpdatePlugins/Locales");
+        for(String li : locales){
+            File file = new File("./plugins/AutoUpdatePlugins/Locales/"+ li);
+            if(file.exists()){
+                continue;
+            }
+            try {
+                file.createNewFile();
+                ByteStreams.copy(
+                        Objects.requireNonNull(getResource("Locales/"+ li)),
+                        new FileOutputStream(file));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // 加载语言和配置
         reloadConfig();
+        loadMessage();
+
 
         tempFile = new File("./plugins/AutoUpdatePlugins/temp.yml");
         temp = YamlConfiguration.loadConfiguration(tempFile);
@@ -572,17 +591,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return in1;
         }
 
-        // 创建目录
-        public String getPath(String path) {
-            Path directory = Paths.get(path);
-            try {
-                Files.createDirectories(directory);
-                return directory + "/";
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         // http 请求获取字符串
         public String httpGet(String url) {
             HttpURLConnection cxn = getHttpCxn(url);
@@ -752,6 +760,17 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         }
     }
 
+    // 创建目录
+    public String getPath(String path) {
+        Path directory = Paths.get(path);
+        try {
+            Files.createDirectories(directory);
+            return directory + "/";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // 显示消息
     public static class m {
         public static String commandInfo;
@@ -798,7 +817,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     }
 
     public String gm(String key, String _default){
-        return getConfig().getString(key, _default);
+        return getConfig().getString("message."+ key, _default);
     }
     public void loadMessage(){
         m.commandInfo = gm("commandInfo", """
