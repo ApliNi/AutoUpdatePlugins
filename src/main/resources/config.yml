@@ -111,7 +111,7 @@ message:
       指令:
         - /aup reload - 重载配置
         - /aup update - 运行更新
-        - /aup log - 查看完整日志
+        - /aup log    - 查看完整日志
   updateCheckIntervalTooLow: '### 更新检查间隔过低将造成性能问题! ###'
   timer: '更新检查将在 %1 秒后运行, 并以每 %2 秒的间隔重复运行'
   commandReloadOnUpdating: '当前正在运行更新, 配置重载将被推迟'

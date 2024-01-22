@@ -108,10 +108,10 @@ list:
 message:
   commandInfo: >-
     IpacEL > AutoUpdatePlugins
-      command.
+      command:
         - /aup reload - reload configuration
         - /aup update - run update
-        - /aup log - view full log
+        - /aup log    - view full log
   updateCheckIntervalTooLow: '#### Update check interval too low will cause performance problems! ###'
   timer: 'The update check will run after %1 seconds and repeat at %2 second intervals'
   commandReloadOnUpdating: 'Currently running update, configuration reload will be postponed'
