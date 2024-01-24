@@ -240,17 +240,18 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         boolean c_getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
 
         public void run() {
-            // 防止重复运行
-            if(lock && !getConfig().getBoolean("disableLook", false)){
-                log(logLevel.WARN, m.repeatedRunUpdate);
-                return;
-            }
-            lock = true;
-            logList = new ArrayList<>();    // 清空上一份日志
-            _startTime = System.nanoTime(); // 记录运行时间
             // 新线程
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(() -> {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                // 防止重复运行
+                if(lock && !getConfig().getBoolean("disableLook", false)){
+                    log(logLevel.WARN, m.repeatedRunUpdate);
+                    return;
+                }
+                lock = true;
+                logList = new ArrayList<>();    // 清空上一份日志
+                _startTime = System.nanoTime(); // 记录运行时间
+
                 log(logLevel.INFO, m.updateStart);
 
                 List<?> list = (List<?>) getConfig().get("list");
@@ -384,8 +385,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 log(logLevel.INFO, "  - "+ m.piece(m.updateFulNetRequest, _allRequests) + m.piece(m.updateFulDownloadFile, String.format("%.2f", _allFileSize / 1048576)));
 
-                lock = false;
-
                 // 运行被推迟的配置重载
                 if(awaitReload){
                     awaitReload = false;
@@ -393,7 +392,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     getLogger().info("[AUP] "+ m.logReloadOK);
                     setTimer();
                 }
-            });
+            }, executor);
+
+            // 在任务完成后执行的代码
+            future.thenRun(() -> lock = false);
+
             executor.shutdown();
         }
 
