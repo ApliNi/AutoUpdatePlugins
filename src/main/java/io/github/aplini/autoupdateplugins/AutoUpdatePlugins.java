@@ -293,8 +293,11 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 if(awaitReload){
                     awaitReload = false;
                     loadConfig();
-                    getLogger().info("[AUP] "+ m.logReloadOK);
                     setTimer();
+                    getLogger().info("[AUP] "+ m.logReloadOK);
+                    if(lastSender != null && lastSender instanceof Player){
+                        lastSender.sendMessage("[AUP] "+ m.logReloadOK);
+                    }
                 }
                 lock = false;
             });
