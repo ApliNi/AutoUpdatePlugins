@@ -250,6 +250,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         String _nowParser = "[???] ";   // 用于解析直链的解析器名称
         int _fail = 0;              // 更新失败数量
         int _success = 0;           // 更新成功数量
+        int _updateFul = 0;         // 已运行的更新数量
         int _allRequests = 0;       // 共进行的网络请求数量
         long _startTime;            // 最终耗时
         float _allFileSize = 0;     // 已下载的文件大小合计
@@ -273,152 +274,18 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     return;
                 }
                 lock = true;
-                logList = new ArrayList<>();    // 清空上一份日志
-                _startTime = System.nanoTime(); // 记录运行时间
 
-                log(logLevel.INFO, m.updateStart);
+                // 运行更新
+                runUpdate();
 
-                List<?> list = (List<?>) getConfig().get("list");
-                if(list == null){
-                    log(logLevel.WARN, m.configErrList);
-                    return;
-                }
-
-                for(Object _li : list){
-                    _fail ++;
-                    if(future.isCancelled()){
-                        log(logLevel.INFO, m.stopUpdate);
-                        if(lastSender != null && lastSender instanceof Player){
-                            lastSender.sendMessage("[AUP] "+ m.stopUpdate);
-                        }
-                        return;
-                    }
-
-                    Map<?, ?> li = (Map<?, ?>) _li;
-                    if(li == null){
-                        log(logLevel.WARN, m.configErrUpdate);
-                        continue;
-                    }
-
-                    // 检查基础配置
-                    c_file = (String) SEL(li.get("file"), "");
-                    c_url = ((String) SEL(li.get("url"), "")).trim();
-                    if(c_file.isEmpty() || c_url.isEmpty()){
-                        log(logLevel.WARN, m.configErrMissing);
-                        continue;
-                    }
-
-                    _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
-                    c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
-
-                    // 每个单独的配置
-                    c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
-                    c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
-                    if(li.get("path") != null){
-                        c_updatePath = getPath((String) li.get("path")) + c_file;
-                        c_filePath = c_updatePath;
-                    }
-                    c_get = (String) SEL(li.get("get"), "");
-                    c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
-                    c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
-
-                    // 下载文件到缓存目录
-                    log(logLevel.DEBUG, m.updateChecking);
-                    String dUrl = getFileUrl(c_url, c_get);
-                    if(dUrl == null){
-                        log(logLevel.WARN, _nowFile + _nowParser + m.updateErrParsingDUrl);
-                        continue;
-                    }
-                    dUrl = checkURL(dUrl);
-//                    outInfo(dUrl);
-
-                    // 启用上一个更新记录与检查
-                    String feature = "";
-                    String pPath = "";
-                    if(getConfig().getBoolean("enablePreviousUpdate", true)){
-                        // 获取文件大小
-                        feature = getFeature(dUrl);
-                        // 是否与上一个版本相同
-                        pPath = "previous." + li.toString().hashCode();
-                        if (temp.get(pPath) != null) {
-                            // 检查数据差异
-                            if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
-                                    temp.getString(pPath + ".feature", "").equals(feature)){
-                                log(logLevel.MARK, m.updateTempAlreadyLatest);
-                                _fail--;
-                                continue;
-                            }
-                        }
-                    }
-
-                    if(!downloadFile(dUrl, c_tempPath)){
-                        log(logLevel.WARN, m.updateErrDownload);
-                        delFile(c_tempPath);
-                        continue;
-                    }
-
-                    // 记录文件大小
-                    float fileSize = new File(c_tempPath).length();
-                    _allFileSize += fileSize;
-
-                    // 文件完整性检查
-                    if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
-                        log(logLevel.WARN, m.updateZipFileCheck);
-                        delFile(c_tempPath);
-                        continue;
-                    }
-
-                    // 此时已确保文件(信息)正常
-                    if(getConfig().getBoolean("enablePreviousUpdate", true)){
-                        // 更新数据
-                        temp.set(pPath + ".file", c_file);
-                        temp.set(pPath + ".time", nowDate());
-                        temp.set(pPath + ".dUrl", dUrl);
-                        temp.set(pPath + ".feature", feature);
-                    }
-
-                    // 在这里实现运行系统命令的功能
-
-                    // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
-                    if(getConfig().getBoolean("ignoreDuplicates", true) && (boolean) SEL(li.get("ignoreDuplicates"), true)){
-                        String updatePathFileHas = fileHash(c_updatePath);
-                        String tempFileHas = fileHash(c_tempPath);
-                        if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
-                            log(logLevel.MARK, m.updateFileAlreadyLatest);
-                            _fail --;
-                            delFile(c_tempPath);
-                            continue;
-                        }
-                    }
-
-                    // 获取旧版本的文件大小, 优先在更新目录中查找, 没有再查找最终安装位置. 如果文件均不存在会返回 0
-                    float oldFileSize = new File(c_updatePath).exists() ? new File(c_updatePath).length() : new File(c_filePath).length();
-
-                    // 移动到更新目录
-                    try {
-                        Files.move(Path.of(c_tempPath), Path.of(c_updatePath), StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        log(logLevel.WARN, e.getMessage());
-                    }
-
-                    // 更新完成, 并显示文件大小变化
-                    log(logLevel.DEBUG, m.piece(m.updateFulSizeDifference, String.format("%.2f", oldFileSize / 1048576), String.format("%.2f", fileSize / 1048576)));
-                    _success ++;
-
-                    _nowFile = "[???] ";
-                    _nowParser = "[???] ";
-                    _fail --;
-                }
-
-                saveDate();
-
+                // 处理统计信息
                 log(logLevel.INFO, m.updateFul);
                 log(logLevel.INFO, "  - "+ m.piece(m.updateFulTime, Math.round((System.nanoTime() - _startTime) / 1_000_000_000.0)));
 
                 String st = "  - ";
                 if(_fail != 0){st += m.piece(m.updateFulFail, _fail);}
                 if(_success != 0){st += m.piece(m.updateFulUpdate, _success);}
-                log(logLevel.INFO, st + m.piece(m.updateFulOK, list.size()));
+                log(logLevel.INFO, st + m.piece(m.updateFulOK, _updateFul));
 
                 log(logLevel.INFO, "  - "+ m.piece(m.updateFulNetRequest, _allRequests) + m.piece(m.updateFulDownloadFile, String.format("%.2f", _allFileSize / 1048576)));
 
@@ -429,11 +296,158 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     getLogger().info("[AUP] "+ m.logReloadOK);
                     setTimer();
                 }
+                lock = false;
             });
-
-            // 在任务完成后执行的代码
-            future.thenRun(() -> lock = false);
         }
+
+        public void runUpdate() {
+
+            logList = new ArrayList<>();    // 清空上一份日志
+            _startTime = System.nanoTime(); // 记录运行时间
+
+            log(logLevel.INFO, m.updateStart);
+
+            List<?> list = (List<?>) getConfig().get("list");
+            if(list == null){
+                log(logLevel.WARN, m.configErrList);
+                return;
+            }
+
+            for(Object _li : list){
+                // 如果任务被 `/aup stop` 停止
+                if(future.isCancelled()){
+                    log(logLevel.INFO, m.stopUpdate);
+                    if(lastSender != null && lastSender instanceof Player){
+                        lastSender.sendMessage("[AUP] "+ m.stopUpdate);
+                    }
+                    return;
+                }
+
+                // 开始运行一个更新
+
+                _fail ++;
+                _updateFul ++;
+
+                Map<?, ?> li = (Map<?, ?>) _li;
+                if(li == null){
+                    log(logLevel.WARN, m.configErrUpdate);
+                    continue;
+                }
+
+                // 检查基础配置
+                c_file = (String) SEL(li.get("file"), "");
+                c_url = ((String) SEL(li.get("url"), "")).trim();
+                if(c_file.isEmpty() || c_url.isEmpty()){
+                    log(logLevel.WARN, m.configErrMissing);
+                    continue;
+                }
+
+                _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
+                c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
+
+                // 每个单独的配置
+                c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
+                c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
+                if(li.get("path") != null){
+                    c_updatePath = getPath((String) li.get("path")) + c_file;
+                    c_filePath = c_updatePath;
+                }
+                c_get = (String) SEL(li.get("get"), "");
+                c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
+                c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
+
+                // 下载文件到缓存目录
+                log(logLevel.DEBUG, m.updateChecking);
+                String dUrl = getFileUrl(c_url, c_get);
+                if(dUrl == null){
+                    log(logLevel.WARN, _nowFile + _nowParser + m.updateErrParsingDUrl);
+                    continue;
+                }
+                dUrl = checkURL(dUrl);
+//                    outInfo(dUrl);
+
+                // 启用上一个更新记录与检查
+                String feature = "";
+                String pPath = "";
+                if(getConfig().getBoolean("enablePreviousUpdate", true)){
+                    // 获取文件大小
+                    feature = getFeature(dUrl);
+                    // 是否与上一个版本相同
+                    pPath = "previous." + li.toString().hashCode();
+                    if (temp.get(pPath) != null) {
+                        // 检查数据差异
+                        if(temp.getString(pPath + ".dUrl", "").equals(dUrl) &&
+                                temp.getString(pPath + ".feature", "").equals(feature)){
+                            log(logLevel.MARK, m.updateTempAlreadyLatest);
+                            _fail--;
+                            continue;
+                        }
+                    }
+                }
+
+                // 下载文件
+                if(!downloadFile(dUrl, c_tempPath)){
+                    log(logLevel.WARN, m.updateErrDownload);
+                    delFile(c_tempPath);
+                    continue;
+                }
+
+                // 记录文件大小
+                float fileSize = new File(c_tempPath).length();
+                _allFileSize += fileSize;
+
+                // 文件完整性检查
+                if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
+                    log(logLevel.WARN, m.updateZipFileCheck);
+                    delFile(c_tempPath);
+                    continue;
+                }
+
+                // 此时已确保文件(信息)正常
+                if(getConfig().getBoolean("enablePreviousUpdate", true)){
+                    // 更新数据
+                    temp.set(pPath + ".file", c_file);
+                    temp.set(pPath + ".time", nowDate());
+                    temp.set(pPath + ".dUrl", dUrl);
+                    temp.set(pPath + ".feature", feature);
+                }
+
+                // 在这里实现运行系统命令的功能
+
+                // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
+                if(getConfig().getBoolean("ignoreDuplicates", true) && (boolean) SEL(li.get("ignoreDuplicates"), true)){
+                    String updatePathFileHas = fileHash(c_updatePath);
+                    String tempFileHas = fileHash(c_tempPath);
+                    if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
+                        log(logLevel.MARK, m.updateFileAlreadyLatest);
+                        _fail --;
+                        delFile(c_tempPath);
+                        continue;
+                    }
+                }
+
+                // 获取旧版本的文件大小, 优先在更新目录中查找, 没有再查找最终安装位置. 如果文件均不存在会返回 0
+                float oldFileSize = new File(c_updatePath).exists() ? new File(c_updatePath).length() : new File(c_filePath).length();
+
+                // 移动到更新目录
+                try {
+                    Files.move(Path.of(c_tempPath), Path.of(c_updatePath), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    log(logLevel.WARN, e.getMessage());
+                }
+
+                // 更新完成, 并显示文件大小变化
+                log(logLevel.DEBUG, m.piece(m.updateFulSizeDifference, String.format("%.2f", oldFileSize / 1048576), String.format("%.2f", fileSize / 1048576)));
+                _success ++;
+
+                _nowFile = "[???] ";
+                _nowParser = "[???] ";
+                _fail --;
+            }
+
+            saveDate();
+        }
+
 
         // 尝试打开 jar 文件以判断文件是否完整
         public boolean isJARFileIntact(String filePath) {
