@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
@@ -33,8 +34,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,9 +41,16 @@ import java.util.zip.ZipException;
 
 
 public final class AutoUpdatePlugins extends JavaPlugin implements Listener, CommandExecutor, TabExecutor {
+    // 防止重复运行更新
     boolean lock = false;
+    // 等待更新完成后再重载配置
     boolean awaitReload = false;
+    // 计时器对象
     Timer timer = null;
+    // 更新处理线程
+    CompletableFuture<Void> future = null;
+    // 记录最后一个使用指令的对象
+    CommandSender lastSender = null;
 
     File tempFile;
     FileConfiguration temp;
@@ -140,7 +146,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         reloadConfig();
         loadMessage();
 
-
         tempFile = new File("./plugins/AutoUpdatePlugins/temp.yml");
         temp = YamlConfiguration.loadConfiguration(tempFile);
         if(temp.get("previous") == null){
@@ -172,16 +177,25 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return  List.of(
                     "reload",   // 重载插件
                     "update",   // 运行更新
-                    "log"       // 查看日志
+                    "log",      // 查看日志
+                    "stop"      // 立即停止当前更新
             );
         }
         return null;
     }
     @Override // 运行指令
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+        lastSender = sender;
+
         // 默认输出插件信息
         if(args.length == 0){
-            sender.sendMessage(m.commandInfo);
+            sender.sendMessage("""
+                    IpacEL > AutoUpdatePlugins: 自动更新插件
+                      指令:
+                        - /aup reload - 重载配置
+                        - /aup update - 运行更新
+                        - /aup log    - 查看完整日志
+                        - /aup stop   - 停止当前更新""");
             return true;
         }
 
@@ -217,6 +231,16 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             }
             return true;
         }
+
+        // 立即停止当前更新
+        else if(args[0].equals("stop")){
+            if(lock){
+                future.cancel(true);
+                sender.sendMessage("[AUP] "+ m.commandStopUpdateIng);
+            }else{
+                sender.sendMessage("[AUP] "+ m.stopUpdate);
+            }
+        }
         return false;
     }
 
@@ -242,8 +266,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         public void run() {
             // 新线程
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            future = CompletableFuture.runAsync(() -> {
                 // 防止重复运行
                 if(lock && !getConfig().getBoolean("disableLook", false)){
                     log(logLevel.WARN, m.repeatedRunUpdate);
@@ -263,6 +286,13 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 for(Object _li : list){
                     _fail ++;
+                    if(future.isCancelled()){
+                        log(logLevel.INFO, m.stopUpdate);
+                        if(lastSender != null && lastSender instanceof Player){
+                            lastSender.sendMessage("[AUP] "+ m.stopUpdate);
+                        }
+                        return;
+                    }
 
                     Map<?, ?> li = (Map<?, ?>) _li;
                     if(li == null){
@@ -284,7 +314,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 每个单独的配置
                     c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
                     c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
-                    if(SEL(li.get("path"), null) != null){
+                    if(li.get("path") != null){
                         c_updatePath = getPath((String) li.get("path")) + c_file;
                         c_filePath = c_updatePath;
                     }
@@ -399,12 +429,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     getLogger().info("[AUP] "+ m.logReloadOK);
                     setTimer();
                 }
-            }, executor);
+            });
 
             // 在任务完成后执行的代码
             future.thenRun(() -> lock = false);
-
-            executor.shutdown();
         }
 
         // 尝试打开 jar 文件以判断文件是否完整
@@ -786,7 +814,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
     // 显示消息
     public static class m {
-        public static String commandInfo;
         public static String updateCheckIntervalTooLow;
         public static String timer;
         public static String commandReloadOnUpdating;
@@ -794,6 +821,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public static String commandRepeatedRunUpdate;
         public static String commandUpdateStart;
         public static String commandFullLog;
+        public static String commandStopUpdateIng;
+        public static String stopUpdate;
         public static String repeatedRunUpdate;
         public static String updateStart;
         public static String configErrList;
@@ -833,13 +862,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         return getConfig().getString("message."+ key, _default);
     }
     public void loadMessage(){
-        m.commandInfo = gm("commandInfo", """
-                IpacEL > AutoUpdatePlugins: 自动更新插件
-                  指令:
-                    - /aup reload - 重载配置
-                    - /aup update - 运行更新
-                    - /aup log - 查看完整日志
-                """);
         m.updateCheckIntervalTooLow = gm("updateCheckIntervalTooLow", "### 更新检查间隔过低将造成性能问题! ###");
         m.timer = gm("timer", "更新检查将在 %1 秒后运行, 并以每 %2 秒的间隔重复运行");
         m.commandReloadOnUpdating = gm("commandReloadOnUpdating", "当前正在运行更新, 配置重载将被推迟");
@@ -847,6 +869,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         m.commandRepeatedRunUpdate = gm("commandRepeatedRunUpdate", "已有一个未完成的更新正在运行");
         m.commandUpdateStart = gm("commandUpdateStart", "更新开始运行!");
         m.commandFullLog = gm("commandFullLog", "完整日志:");
+        m.commandStopUpdateIng = gm("commandStopUpdateIng", "正在停止当前更新...");
+        m.stopUpdate = gm("stopUpdate", "已停止当前更新");
         m.repeatedRunUpdate = gm("repeatedRunUpdate", "### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###");
         m.updateStart = gm("updateStart", "[## 开始运行自动更新 ##]");
         m.configErrList = gm("configErrList", "更新列表配置错误? ");

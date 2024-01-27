@@ -108,12 +108,6 @@ list:
 
 # 在这里编辑插件可能显示的消息
 message:
-  commandInfo: >-
-    IpacEL > AutoUpdatePlugins: 自动更新插件
-      指令:
-        - /aup reload - 重载配置
-        - /aup update - 运行更新
-        - /aup log    - 查看完整日志
   updateCheckIntervalTooLow: '### 更新检查间隔过低将造成性能问题! ###'
   timer: '更新检查将在 %1 秒后运行, 并以每 %2 秒的间隔重复运行'
   commandReloadOnUpdating: '当前正在运行更新, 配置重载将被推迟'
@@ -121,6 +115,8 @@ message:
   commandRepeatedRunUpdate: '已有一个未完成的更新正在运行'
   commandUpdateStart: '更新开始运行!'
   commandFullLog: '完整日志:'
+  commandStopUpdateIng: '正在停止当前更新... '
+  stopUpdate: '已停止当前更新'
   repeatedRunUpdate: '### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###'
   updateStart: '[## 开始运行自动更新 ##]'
   configErrList: '更新列表配置错误? '

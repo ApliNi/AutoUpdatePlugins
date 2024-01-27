@@ -108,12 +108,6 @@ list:
 
 # Edit the messages the plugin may display here
 message:
-  commandInfo: >-
-    IpacEL > AutoUpdatePlugins
-      command:
-        - /aup reload - reload configuration
-        - /aup update - run update
-        - /aup log    - view full log
   updateCheckIntervalTooLow: '#### Update check interval too low will cause performance problems! ###'
   timer: 'The update check will run after %1 seconds and repeat at %2 second intervals'
   commandReloadOnUpdating: 'Currently running update, configuration reload will be postponed'
@@ -121,6 +115,8 @@ message:
   commandRepeatedRunUpdate: 'There is already an unfinished update running'
   commandUpdateStart: 'Update is running!'
   commandFullLog: 'Full log:'
+  commandStopUpdateIng: 'Current updates are being stopped...'
+  stopUpdate: 'Too many requests'
   repeatedRunUpdate: '### The update program started repeatedly or with errors? Trying to increase update check interval? ###'
   updateStart: '[### Start running automatic updates ##]'
   configErrList: 'Error configuring update list? '

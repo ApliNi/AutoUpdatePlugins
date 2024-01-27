@@ -11,6 +11,7 @@ Download: https://modrinth.com/plugin/AutoUpdatePlugins
     - `/aup reload` Reload configuration
     - `/aup update` Run update manually
     - `/aup log` View full logs
+    - `/aup stop` Stop the current update
 
 
 - [x] Using the `update` directory for plugin updates

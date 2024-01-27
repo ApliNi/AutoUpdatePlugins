@@ -13,6 +13,7 @@
     - `/aup reload` 重新加载配置
     - `/aup update` 手动运行更新
     - `/aup log` 查看完整日志
+    - `/aup stop` 停止当前更新
 
 
 - [x] 使用 `update` 目录进行插件更新
