@@ -118,7 +118,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
     }
 
     public void loadConfig(){
-        // 导出语言文件
+        // 导出不同语言的配置文件
         List<String> locales = List.of("config_en.yml");
         getPath("./plugins/AutoUpdatePlugins/Locales");
         for(String li : locales){
@@ -166,6 +166,17 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         timer.schedule(new updatePlugins(), startupDelay * 1000, startupCycle * 1000);
     }
 
+    @Override // 指令补全
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+        if (args.length == 1) {
+            return  List.of(
+                    "reload",   // 重载插件
+                    "update",   // 运行更新
+                    "log"       // 查看日志
+            );
+        }
+        return null;
+    }
     @Override // 运行指令
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
         // 默认输出插件信息
@@ -209,16 +220,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         return false;
     }
 
-    @Override // 指令补全
-    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
-        if (args.length == 1) {
-            return  List.of(
-                    "reload",   // 重载插件
-                    "update"    // 运行更新
-            );
-        }
-        return null;
-    }
 
     private class updatePlugins extends TimerTask {
         String _nowFile = "[???] ";     // 当前文件的名称
@@ -283,6 +284,10 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 每个单独的配置
                     c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
                     c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
+                    if(SEL(li.get("path"), null) != null){
+                        c_updatePath = getPath((String) li.get("path")) + c_file;
+                        c_filePath = c_updatePath;
+                    }
                     c_get = (String) SEL(li.get("get"), "");
                     c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
                     c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
@@ -345,17 +350,19 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     // 在这里实现运行系统命令的功能
 
                     // 哈希值检查, 如果新文件哈希与更新目录中的相等, 或者与正在运行的版本相等, 则无需更新
-                    String tempFileHas = fileHash(c_tempPath);
-                    String updatePathFileHas = fileHash(c_updatePath);
-                    if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
-                        log(logLevel.MARK, m.updateFileAlreadyLatest);
-                        _fail --;
-                        delFile(c_tempPath);
-                        continue;
+                    if(getConfig().getBoolean("ignoreDuplicates", true) && (boolean) SEL(li.get("ignoreDuplicates"), true)){
+                        String updatePathFileHas = fileHash(c_updatePath);
+                        String tempFileHas = fileHash(c_tempPath);
+                        if(Objects.equals(tempFileHas, updatePathFileHas) || Objects.equals(tempFileHas, fileHash(c_filePath))){
+                            log(logLevel.MARK, m.updateFileAlreadyLatest);
+                            _fail --;
+                            delFile(c_tempPath);
+                            continue;
+                        }
                     }
 
-                    // 获取旧版本的文件大小
-                    float oldFileSize = updatePathFileHas.equals("null") ? new File(c_filePath).length() : new File(c_updatePath).length();
+                    // 获取旧版本的文件大小, 优先在更新目录中查找, 没有再查找最终安装位置. 如果文件均不存在会返回 0
+                    float oldFileSize = new File(c_updatePath).exists() ? new File(c_updatePath).length() : new File(c_filePath).length();
 
                     // 移动到更新目录
                     try {
