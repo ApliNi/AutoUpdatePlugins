@@ -13,6 +13,9 @@ https://github.com/ApliNi/AutoUpdatePlugins
 ---
 
 ## AutoUpdatePlugins
+
+[[中文文档]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README.md) -- [[English document]](https://github.com/ApliNi/AutoUpdatePlugins/blob/main/README_EN.md)
+
 更好的自动更新插件
 
 下载: https://modrinth.com/plugin/AutoUpdatePlugins
@@ -24,6 +27,7 @@ https://github.com/ApliNi/AutoUpdatePlugins
     - `/aup reload` 重新加载配置
     - `/aup update` 手动运行更新
     - `/aup log` 查看完整日志
+    - `/aup stop` 停止当前更新
 
 
 - [x] 使用 `update` 目录进行插件更新
@@ -161,20 +165,22 @@ list:
 #  # 可以像这样为每个文件添加配置
 #  - file: 'serverConfig.yml'
 #    url: 'http://[::]:5212/serverConfig.yml'
-#    updatePath: './'     # 设置单独的更新目录
-#    filePath: './'       # 设置哈希检查的目录
+#    path: './'     # 设置单独的安装目录, path 会同时设置哈希检查的位置 (filePath)
 #    zipFileCheck: false  # 关闭完整性检查
 
 
 ### list 中的所有可用配置 ###
+# 除非你知道这是在做什么, 否则不要随意随意使用
 # String file;              // 文件名称
 # String url;               // 下载链接
 # String tempPath;          // 下载缓存路径, 默认使用全局配置
 # String updatePath;        // 更新存放路径, 默认使用全局配置
 # String filePath;          // 最终安装路径, 默认使用全局配置
+# String path;              // 同时覆盖 updatePath 和 filePath 配置
 # String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 GitHub, Jenkins, Modrinth
-# boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
 # boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
+# boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+# boolean ignoreDuplicates; // 关闭哈希检查
 
 ```
 

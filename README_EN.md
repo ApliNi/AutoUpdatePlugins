@@ -146,23 +146,25 @@ list:
 #  - file: 'SF4_FluffyMachines.jar'
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
 
-#  # Configuration can be added to each file like this
+#  # Too many requests
 #  - file: 'serverConfig.yml'
 #    url: 'http://[::]:5212/serverConfig.yml'
-#    updatePath: './'     # Setting up a separate update directory
-#    filePath: './'       # Setting the directory for hash checking
-#    zipFileCheck: false  # Close integrity check
+#    path: './'     # Too many requests
+#    zipFileCheck: false  # Too many requests
 
 
 ### All available configurations in list ###
+# Unless you know what you're doing, don't use it willy-nilly.
 # String file;              // File name
 # String url;               // Download link
 # String tempPath;          // download cache path, use global configuration by default
 # String updatePath;        // update path, used globally by default
 # String filePath;          // The final installation path, used globally by default.
-# String get;               // Regular expression to select the specified file, first one is selected by default. Github, Jenkins, Modrinth only.
-# boolean zipFileCheck;     // Enable zip file integrity checking, true by default.
+# String path;              // Overriding both updatePath and filePath configurations
+# String get;               // Regular expression to select the specified file, first one is selected by default. GitHub, Jenkins, Modrinth only.
 # boolean getPreRelease;    // Allow downloading of pre-releases, false by default. GitHub only.
+# boolean zipFileCheck;     // Enable zip file integrity checking, true by default.
+# boolean ignoreDuplicates; // Turn off hash checking
 
 ```
 
