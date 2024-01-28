@@ -246,7 +246,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
 
     private class updatePlugins extends TimerTask {
-        String _nowFile = "[???] ";     // 当前文件的名称
+        String _fileName = "[???] ";    // 当前文件的名称
         String _nowParser = "[???] ";   // 用于解析直链的解析器名称
         int _fail = 0;              // 更新失败数量
         int _success = 0;           // 更新成功数量
@@ -299,6 +299,9 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         lastSender.sendMessage("[AUP] "+ m.logReloadOK);
                     }
                 }
+
+                _fileName = "[???] ";
+                _nowParser = "[???] ";
                 lock = false;
             });
         }
@@ -345,36 +348,46 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     continue;
                 }
 
-                _nowFile = "["+ c_file +"] "; // 用于显示日志的插件名称
-                c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
-
-                // 每个单独的配置
+                // 获取用于显示日志的插件名称
+                Matcher tempMatcher = Pattern.compile("([^/\\\\]+)\\..*$").matcher(c_file);
+                if(tempMatcher.find()){
+                    _fileName = "["+ tempMatcher.group(1) +"] ";
+                }else{
+                    _fileName = "["+ c_file +"] ";
+                }
 
                 // 如果 file 配置中包含路径, 则自动提取并设置 path 参数
-                if(c_file.contains("/") || c_file.contains("\\")){ // windows 下的反斜杠路径
+                tempMatcher = Pattern.compile("(.*/|.*\\\\)([^/\\\\]+)$").matcher(c_file);
+                if(tempMatcher.find()){ // windows 下的反斜杠路径
+                    getPath(tempMatcher.group(1));
                     c_updatePath = c_file;
                     c_filePath = c_file;
+                    c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + tempMatcher.group(2);
                 }
                 // path 参数将同时设置 c_updatePath 和 c_filePath
                 else if(li.get("path") != null){
                     c_updatePath = getPath((String) li.get("path")) + c_file;
                     c_filePath = c_updatePath;
+                    c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
                 }
                 // 使用全局配置
                 else{
                     c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
                     c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
+                    c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
                 }
 
                 c_get = (String) SEL(li.get("get"), "");
                 c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), getConfig().getBoolean("zipFileCheck", true));
                 c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
 
-                // 下载文件到缓存目录
+                // "[xx] 正在检查更新..."
                 log(logLevel.DEBUG, m.updateChecking);
+
+                // 下载文件到缓存目录
                 String dUrl = getFileUrl(c_url, c_get);
                 if(dUrl == null){
-                    log(logLevel.WARN, _nowFile + _nowParser + m.updateErrParsingDUrl);
+                    log(logLevel.WARN, _fileName + _nowParser + m.updateErrParsingDUrl);
                     continue;
                 }
                 dUrl = checkURL(dUrl);
@@ -456,11 +469,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 log(logLevel.DEBUG, m.piece(m.updateFulSizeDifference, String.format("%.2f", oldFileSize / 1048576), String.format("%.2f", fileSize / 1048576)));
                 _success ++;
 
-                _nowFile = "[???] ";
-                _nowParser = "[???] ";
                 _fail --;
             }
-
             saveDate();
         }
 
@@ -760,24 +770,24 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             if(userLogLevel.contains(level.name)){
                 switch(level.name){
                     case "DEBUG":
-                        getLogger().info(_nowFile + text);
+                        getLogger().info(_fileName + text);
                         break;
                     case "INFO":
                         getLogger().info(text);
                         break;
                     case "MARK":
                         // 一些新版本的控制台似乎很难显示颜色
-                        Bukkit.getConsoleSender().sendMessage(level.color +"[AUP] "+ _nowFile + text);
+                        Bukkit.getConsoleSender().sendMessage(level.color +"[AUP] "+ _fileName + text);
                         break;
                     case "WARN", "NET_WARN":
-                        getLogger().warning(_nowFile + text);
+                        getLogger().warning(_fileName + text);
                         break;
                 }
             }
 
             // 根据日志等级添加样式代码, 并记录到 logList
             // 非 INFO 日志添加 _nowFile 文本
-            logList.add(level.color + (level.name.equals("INFO") ? "" : _nowFile) +  text);
+            logList.add(level.color + (level.name.equals("INFO") ? "" : _fileName) +  text);
         }
         enum logLevel {
             // 允许被忽略的 INFO

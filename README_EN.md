@@ -82,6 +82,8 @@ enablePreviousUpdate: true
 
 # File integrity check, only works on .jar / .zip files. Try to open it as a zip file, if it fails, it is incomplete.
 zipFileCheck: true
+# If the file configuration matches this regex, zip integrity checking is enabled, otherwise it is not enabled
+zipFileCheckList: '\.(?:jar|zip)$'
 
 # Do not move to the update directory if the hash of the downloaded file matches the hash of the file to be updated in the update directory (or the file running on the server) (MD5)
 ignoreDuplicates: true
@@ -96,11 +98,11 @@ setRequestProperty:
 
 # 启用哪些日志等级
 logLevel:
-  - "DEBUG"   # for debugging, can be commented out after testing is complete
-  - "MARK"    # Same as DEBUG, green color, used to mark task completion.
-  - "INFO"    # Output logs
-  - "WARN"    # Output warnings
-  - "NET_WARN"  # Warnings from the web request module
+  - 'DEBUG'   # for debugging, can be commented out after testing is complete
+  - 'MARK'    # Same as DEBUG, green color, used to mark task completion.
+  - 'INFO'    # Output logs
+  - 'WARN'    # Output warnings
+  - 'NET_WARN'  # Warnings from the web request module
 
 
 # Plugin List
@@ -146,11 +148,10 @@ list:
 #  - file: 'SF4_FluffyMachines.jar'
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
 
-#  # Too many requests
-#  - file: 'serverConfig.yml'
+#  # Configuration can be added to each file like this
+#  # If the file configuration contains a path, the path parameter is automatically set.
+#  - file: './serverConfig.yml'
 #    url: 'http://[::]:5212/serverConfig.yml'
-#    path: './'     # Too many requests
-#    zipFileCheck: false  # Too many requests
 
 
 ### All available configurations in list ###
@@ -163,7 +164,7 @@ list:
 # String path;              // Overriding both updatePath and filePath configurations
 # String get;               // Regular expression to select the specified file, first one is selected by default. GitHub, Jenkins, Modrinth only.
 # boolean getPreRelease;    // Allow downloading of pre-releases, false by default. GitHub only.
-# boolean zipFileCheck;     // Enable zip file integrity checking, true by default.
+# boolean zipFileCheck;     // Enable zip file integrity checking
 # boolean ignoreDuplicates; // Turn off hash checking
 
 ```

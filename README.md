@@ -84,6 +84,8 @@ enablePreviousUpdate: true
 
 # 文件完整性检查, 只对 .jar / .zip 等文件有效. 尝试以压缩包的形式打开, 若失败则表示不完整
 zipFileCheck: true
+# 如果 file 配置与此正则匹配, 则启用 zip 完整性检查, 否则不会启用
+zipFileCheckList: '\.(?:jar|zip)$'
 
 # 如果下载后的文件哈希与更新目录中待更新的文件 (或者服务器正在运行的文件) 哈希值一致则不移动到更新目录 (MD5
 ignoreDuplicates: true
@@ -98,11 +100,11 @@ setRequestProperty:
 
 # 启用哪些日志等级
 logLevel:
-  - "DEBUG"   # 用于调试, 可在测试完成后注释掉
-  - "MARK"    # 与 DEBUG 相同, 显示绿色, 用于标记任务完成
-  - "INFO"    # 输出日志
-  - "WARN"    # 输出警告
-  - "NET_WARN"  # 网络请求模块的警告
+  - 'DEBUG'   # 用于调试, 可在测试完成后注释掉
+  - 'MARK'    # 与 DEBUG 相同, 显示绿色, 用于标记任务完成
+  - 'INFO'    # 输出日志
+  - 'WARN'    # 输出警告
+  - 'NET_WARN'  # 网络请求模块的警告
 
 
 # 插件列表
@@ -149,10 +151,9 @@ list:
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
 
 #  # 可以像这样为每个文件添加配置
-#  - file: 'serverConfig.yml'
+#  # 如果 file 配置中包含路径, 则自动设置 path 参数
+#  - file: './serverConfig.yml'
 #    url: 'http://[::]:5212/serverConfig.yml'
-#    path: './'     # 设置单独的安装目录, path 会同时设置哈希检查的位置 (filePath)
-#    zipFileCheck: false  # 关闭完整性检查
 
 
 ### list 中的所有可用配置 ###
@@ -165,7 +166,7 @@ list:
 # String path;              // 同时覆盖 updatePath 和 filePath 配置
 # String get;               // 选择指定文件的正则表达式, 默认选择第一个. 仅限 GitHub, Jenkins, Modrinth
 # boolean getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
-# boolean zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+# boolean zipFileCheck;     // 启用 zip 文件完整性检查
 # boolean ignoreDuplicates; // 关闭哈希检查
 
 ```
