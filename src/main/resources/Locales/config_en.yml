@@ -21,6 +21,8 @@ enablePreviousUpdate: true
 
 # File integrity check, only works on .jar / .zip files. Try to open it as a zip file, if it fails, it is incomplete.
 zipFileCheck: true
+# If the file configuration matches this regex, zip integrity checking is enabled, otherwise it is not enabled
+zipFileCheckList: '\.(?:jar|zip)$'
 
 # Do not move to the update directory if the hash of the downloaded file matches the hash of the file to be updated in the update directory (or the file running on the server) (MD5)
 ignoreDuplicates: true
@@ -35,11 +37,11 @@ setRequestProperty:
 
 # 启用哪些日志等级
 logLevel:
-  - "DEBUG"   # for debugging, can be commented out after testing is complete
-  - "MARK"    # Same as DEBUG, green color, used to mark task completion.
-  - "INFO"    # Output logs
-  - "WARN"    # Output warnings
-  - "NET_WARN"  # Warnings from the web request module
+  - 'DEBUG'   # for debugging, can be commented out after testing is complete
+  - 'MARK'    # Same as DEBUG, green color, used to mark task completion.
+  - 'INFO'    # Output logs
+  - 'WARN'    # Output warnings
+  - 'NET_WARN'  # Warnings from the web request module
 
 
 # Plugin List
@@ -89,7 +91,6 @@ list:
 #  - file: 'serverConfig.yml'
 #    url: 'http://[::]:5212/serverConfig.yml'
 #    path: './'     # Too many requests
-#    zipFileCheck: false  # Too many requests
 
 
 ### All available configurations in list ###

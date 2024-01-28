@@ -262,7 +262,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         String c_updatePath;        // 更新存放路径, 默认使用全局配置
         String c_filePath;          // 最终安装路径, 默认使用全局配置
         String c_get;               // 查找单个文件的正则表达式, 默认选择第一个. 仅限 GitHub, Jenkins, Modrinth
-        boolean c_zipFileCheck;     // 启用 zip 文件完整性检查, 默认 true
+        boolean c_zipFileCheck;     // 启用 zip 文件完整性检查, 默认默认使用全局配置或 true
         boolean c_getPreRelease;    // 允许下载预发布版本, 默认 false. 仅限 GitHub
 
         public void run() {
@@ -356,7 +356,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     c_filePath = c_updatePath;
                 }
                 c_get = (String) SEL(li.get("get"), "");
-                c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), true);
+                c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), getConfig().getBoolean("zipFileCheck", true));
                 c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
 
                 // 下载文件到缓存目录
@@ -400,10 +400,12 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 _allFileSize += fileSize;
 
                 // 文件完整性检查
-                if(c_zipFileCheck && !isJARFileIntact(c_tempPath)){
-                    log(logLevel.WARN, m.updateZipFileCheck);
-                    delFile(c_tempPath);
-                    continue;
+                if(c_zipFileCheck && Pattern.compile(getConfig().getString("zipFileCheckList", "\\.(?:jar|zip)$")).matcher(c_file).find()){
+                    if(!isJARFileIntact(c_tempPath)){
+                        log(logLevel.WARN, m.updateZipFileCheck);
+                        delFile(c_tempPath);
+                        continue;
+                    }
                 }
 
                 // 此时已确保文件(信息)正常
@@ -455,18 +457,14 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         // 尝试打开 jar 文件以判断文件是否完整
         public boolean isJARFileIntact(String filePath) {
             // 是否启用完整性检查
-            if(getConfig().getBoolean("zipFileCheck", true)){
-                try {
-                    JarFile jarFile = new JarFile(new File(filePath));
-                    jarFile.close();
-                    return true;
-                } catch (ZipException e) { // 文件不完整
-                    return false;
-                } catch (Exception e) { // 其他异常
-                    return false;
-                }
-            }else{
+            try {
+                JarFile jarFile = new JarFile(new File(filePath));
+                jarFile.close();
                 return true;
+            } catch (ZipException e) { // 文件不完整
+                return false;
+            } catch (Exception e) { // 其他异常
+                return false;
             }
         }
 
