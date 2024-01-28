@@ -349,12 +349,23 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 c_tempPath = getPath(getConfig().getString("tempPath", "./plugins/AutoUpdatePlugins/temp/")) + c_file;
 
                 // 每个单独的配置
-                c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
-                c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
-                if(li.get("path") != null){
+
+                // 如果 file 配置中包含路径, 则自动提取并设置 path 参数
+                if(c_file.contains("/") || c_file.contains("\\")){ // windows 下的反斜杠路径
+                    c_updatePath = c_file;
+                    c_filePath = c_file;
+                }
+                // path 参数将同时设置 c_updatePath 和 c_filePath
+                else if(li.get("path") != null){
                     c_updatePath = getPath((String) li.get("path")) + c_file;
                     c_filePath = c_updatePath;
                 }
+                // 使用全局配置
+                else{
+                    c_updatePath = getPath((String) SEL(li.get("updatePath"), getConfig().getString("updatePath", "./plugins/update/"))) + c_file;
+                    c_filePath = getPath((String) SEL(li.get("filePath"), getConfig().getString("filePath", "./plugins/"))) + c_file;
+                }
+
                 c_get = (String) SEL(li.get("get"), "");
                 c_zipFileCheck = (boolean) SEL(li.get("zipFileCheck"), getConfig().getBoolean("zipFileCheck", true));
                 c_getPreRelease = (boolean) SEL(li.get("getPreRelease"), false);
