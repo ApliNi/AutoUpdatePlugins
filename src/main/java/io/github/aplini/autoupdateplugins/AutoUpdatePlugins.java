@@ -2,6 +2,9 @@ package io.github.aplini.autoupdateplugins;
 
 import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,7 +25,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -65,9 +69,8 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         Objects.requireNonNull(getCommand("aup")).setExecutor(this);
 
         // bStats
-        if(getConfig().getBoolean("bStats", true)){
-            new Metrics(this, 20629);
-        }
+        Metrics metrics = new Metrics(this, 20629);
+        metrics.addCustomChart(new Metrics.SingleLineChart("Plugins", () -> ((List<?>) Objects.requireNonNull(getConfig().get("list"))).size()));
 
         // 禁用证书验证
         if(getConfig().getBoolean("disableCertificateVerification", false)) {
@@ -232,7 +235,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return true;
         }
 
-        // 立即停止当前更新
+        // 停止当前更新
         else if(args[0].equals("stop")){
             if(lock){
                 future.cancel(true);
@@ -300,8 +303,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     }
                 }
 
-                _fileName = "[???] ";
-                _nowParser = "[???] ";
                 lock = false;
             });
         }
@@ -439,6 +440,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     temp.set(pPath + ".time", nowDate());
                     temp.set(pPath + ".dUrl", dUrl);
                     temp.set(pPath + ".feature", feature);
+                    saveDate();
                 }
 
                 // 在这里实现运行系统命令的功能
@@ -467,11 +469,14 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
                 // 更新完成, 并显示文件大小变化
                 log(logLevel.DEBUG, m.piece(m.updateFulSizeDifference, String.format("%.2f", oldFileSize / 1048576), String.format("%.2f", fileSize / 1048576)));
-                _success ++;
 
+                _success ++;
                 _fail --;
+
+                // 这一部分可以删除, 但为了防止未知的错误影响日志内容
+                _fileName = "[???] ";
+                _nowParser = "[???] ";
             }
-            saveDate();
         }
 
 
@@ -668,94 +673,84 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return in1;
         }
 
+        // 获取 OkHttp Client
+        public OkHttpClient getOkHttpClient(){
+            _allRequests ++;
+            OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
+            // 启用网络代理
+            if(!getConfig().getString("proxy.type", "DIRECT").equals("DIRECT")){
+                okHttpClient.proxy(new Proxy(
+                        Proxy.Type.valueOf(getConfig().getString("proxy.type")),
+                        new InetSocketAddress(
+                                getConfig().getString("proxy.host", "127.0.0.1"),
+                                getConfig().getInt("proxy.port", 7890))));
+            }
+            return okHttpClient.build();
+        }
+
         // http 请求获取字符串
         public String httpGet(String url) {
-            HttpURLConnection cxn = getHttpCxn(url);
-            if(cxn == null){return null;}
-            try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(cxn.getInputStream()));
-                StringBuilder stringBuilder = new StringBuilder();
-                String line;
-                while((line = reader.readLine()) != null){
-                    stringBuilder.append(line);
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            try (Response response = getOkHttpClient().newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    return null;
                 }
-                reader.close();
-                cxn.disconnect();
-                return String.valueOf(stringBuilder);
-            } catch (Exception e) {
-                log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
+                return response.body().string();
+            } catch (IOException e) {
+                log(logLevel.NET_WARN, "[HTTP] " + e.getMessage());
             }
-            cxn.disconnect();
             return null;
         }
 
-        // 下载文件到指定位置, 并使用指定文件名
-        public boolean downloadFile(String url, String path){
-            delFile(path); // 删除可能存在的旧文件
-            HttpURLConnection cxn = getHttpCxn(url);
-            if(cxn == null){return false;}
-            try {
-                BufferedInputStream in = new BufferedInputStream(cxn.getInputStream());
-                Path savePath = Path.of(path);
-                Files.copy(in, savePath, StandardCopyOption.REPLACE_EXISTING);
-                cxn.disconnect();
+        // 下载文件到指定目录
+        public boolean downloadFile(String url, String path) {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            try (Response response = getOkHttpClient().newCall(request).execute()) {
+                if(!response.isSuccessful()){
+                    return false;
+                }
+                try (InputStream inputStream = response.body().byteStream();
+                     OutputStream outputStream = new FileOutputStream(path)) {
+
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                }
                 return true;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
             }
-            cxn.disconnect();
             return false;
         }
 
         // 通过 HEAD 请求获取一些特征信息
         public String getFeature(String url){
-            String out = "_"+ nowDate().hashCode();
-            try {
-                HttpURLConnection cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
-                cxn.setRequestMethod("HEAD");
-                _allRequests ++;
-
-                int cl = cxn.getContentLength();
-                String lh = cxn.getHeaderField("Location");
-
-                if(cl != -1) {
-                    out = "cl_"+ cl;
+            Request request = new Request.Builder()
+                    .head()
+                    .url(url)
+                    .build();
+            try (Response response = getOkHttpClient().newCall(request).execute()) {
+                if(!response.isSuccessful()){
+                    return "??_"+ nowDate().hashCode();
                 }
-                else if(lh != null){
-                    out = "lh_"+ lh.hashCode();
+                String contentLength = SEL(response.headers().get("Content-Length"), -1).toString();
+                if(!contentLength.equals("-1")){
+                    return "CL_"+ contentLength;
                 }
-                cxn.disconnect();
-            } catch (Exception e) {
-                log(logLevel.NET_WARN, "[HTTP.HEAD] "+ e.getMessage());
+                String location = SEL(response.headers().get("Location"), "Invalid").toString();
+                if(!location.equals("Invalid")){
+                    return "LH_"+ location.hashCode();
+                }
+            } catch (IOException e) {
+                log(logLevel.NET_WARN, "[[HTTP.HEAD] "+ e.getMessage());
             }
-            return out;
-        }
-
-        // 获取 HTTP 连接
-        public HttpURLConnection getHttpCxn(String url){
-            HttpURLConnection cxn = null;
-            try {
-                cxn = (HttpURLConnection) new URI(url).toURL().openConnection();
-                cxn.setRequestMethod("GET");
-                _allRequests ++;
-                // 填充请求头数据
-                List<?> list = (List<?>) getConfig().get("setRequestProperty");
-                if(list != null){
-                    for(Object _li : list) {
-                        Map<?, ?> li = (Map<?, ?>) _li;
-                        cxn.setRequestProperty((String) li.get("name"), (String) li.get("value"));
-                    }
-                }
-                if(cxn.getResponseCode() == 200){
-                    return cxn;
-                }
-                cxn.disconnect();
-                log(logLevel.NET_WARN, "[HTTP]"+ m.piece(m.httpRequestFailed, cxn.getResponseCode(), url));
-            } catch (Exception e) {
-                log(logLevel.NET_WARN, "[HTTP] "+ e.getMessage());
-            }
-            if(cxn != null){cxn.disconnect();}
-            return null;
+            return "??_"+ nowDate().hashCode();
         }
 
         // 在插件更新过程中输出尽可能详细的日志
@@ -787,7 +782,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
             // 根据日志等级添加样式代码, 并记录到 logList
             // 非 INFO 日志添加 _nowFile 文本
-            logList.add(level.color + (level.name.equals("INFO") ? "" : _fileName) +  text);
+            logList.add(level.color + (level.name.equals("INFO") ? "" : _fileName) + text);
         }
         enum logLevel {
             // 允许被忽略的 INFO
@@ -923,7 +918,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         m.updateFulTime = gm("updateFulTime", "耗时: %1 秒");
         m.updateFulFail = gm("updateFulFail", "失败: %1, ");
         m.updateFulUpdate = gm("updateFulUpdate", "更新: %1, ");
-        m.updateFulOK = gm("updateFulOK", "完成: %1");
+        m.updateFulOK = gm("updateFulOK", "成功: %1");
         m.updateFulNetRequest = gm("updateFulNetRequest", "网络请求: %1, ");
         m.updateFulDownloadFile = gm("updateFulDownloadFile", "下载文件: %1MB");
         m.logReloadOK = gm("logReloadOK", "已完成重载");

@@ -27,8 +27,11 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # 如果下载后的文件哈希与更新目录中待更新的文件 (或者服务器正在运行的文件) 哈希值一致则不移动到更新目录 (MD5
 ignoreDuplicates: true
 
-# 全局禁用证书验证, 修改后需要重启
-disableCertificateVerification: false
+# 设置网络代理
+proxy:
+  type: DIRECT # DIRECT | HTTP | SOCKS
+  host: '127.0.0.1'
+  port: 7890
 
 # HTTP 请求中编辑请求头
 setRequestProperty:
@@ -134,7 +137,7 @@ message:
   updateFulTime: '耗时: %1 秒'
   updateFulFail: '失败: %1, '
   updateFulUpdate: '更新: %1, '
-  updateFulOK: '完成: %1'
+  updateFulOK: '成功: %1'
   updateFulNetRequest: '网络请求: %1, '
   updateFulDownloadFile: '下载文件: %1MB'
   logReloadOK: '已完成重载'

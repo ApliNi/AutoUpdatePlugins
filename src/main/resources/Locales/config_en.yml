@@ -27,8 +27,11 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # Do not move to the update directory if the hash of the downloaded file matches the hash of the file to be updated in the update directory (or the file running on the server) (MD5)
 ignoreDuplicates: true
 
-# Disable certificate validation globally, need to reboot after modification.
-disableCertificateVerification: false
+# Setting up a web proxy
+proxy:
+  type: DIRECT # DIRECT | HTTP | SOCKS
+  host: '127.0.0.1'
+  port: 7890
 
 # Edit request headers in HTTP requests
 setRequestProperty:
@@ -134,7 +137,7 @@ message:
   updateFulTime: 'Time taken: %1 seconds'
   updateFulFail: 'Failed: %1,'
   updateFulUpdate: 'Update: %1,'
-  updateFulOK: 'Completed: %1'
+  updateFulOK: 'Success: %1'
   updateFulNetRequest: 'Network Request: %1, '
   updateFulDownloadFile: 'Downloading file: %1MB'
   logReloadOK: 'Reload completed'
