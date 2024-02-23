@@ -637,22 +637,32 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 return null;
             }
 
+            else if(url.contains("://www.minebbs.com/")){   // MineBBS
+                // https://www.minebbs.com/resources/coreprotect-coi.7320/download
+                _nowParser = "[MineBBS] ";
+                return url + "/download";
+            }
+
             else if(url.contains("://legacy.curseforge.com/")){ // CurseForge 页面
                 _nowParser = "[CurseForge] ";
                 // https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
                 // data-project-id="31620"
+                // https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap/download/4632182/file
 
                 String html = httpGet(url); // 下载 html 网页, 获取 project-id
                 if(html == null){return null;}
-                Matcher matcher = Pattern.compile("data-project-id=\"([0-9+])\"").matcher(html);
-                if(matcher.find()){
-                    String data = httpGet(matcher.group(1));
-                    if(data == null){return null;}
-                    ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, ArrayList.class);
-                    Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
-                    String dUrl = (String) map.get("downloadUrl");
-                    log(logLevel.DEBUG, _nowParser + m.piece(m.debugGetVersion, dUrl));
-                    return dUrl;
+                String[] lines = html.split("<a"); // 按每个 a 标签进行分割
+                for(String li : lines){
+                    Matcher matcher = Pattern.compile("data-project-id=\"([0-9]+)\"").matcher(li);
+                    if(matcher.find()){
+                        String data = httpGet("https://api.curseforge.com/servermods/files?projectIds="+ matcher.group(1));
+                        if(data == null){return null;}
+                        ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, ArrayList.class);
+                        Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
+                        String dUrl = (String) map.get("downloadUrl");
+                        log(logLevel.DEBUG, _nowParser + m.piece(m.debugGetVersion, dUrl));
+                        return dUrl;
+                    }
                 }
                 log(logLevel.WARN, _nowParser + m.piece(m.debugErrNoID, url));
                 return null;
@@ -880,7 +890,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         public static String debugErrUrlResolveNoID;
         public static String debugErrUrlResolveNoName;
         public static String debugErrNoID;
-        public static String httpRequestFailed;
         public static String urlInvalid;
 
         // 处理消息模板
@@ -902,7 +911,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         m.commandFullLog = gm("commandFullLog", "完整日志:");
         m.commandStopUpdateIng = gm("commandStopUpdateIng", "正在停止当前更新...");
         m.stopUpdate = gm("stopUpdate", "已停止当前更新");
-        m.repeatedRunUpdate = gm("repeatedRunUpdate", "### 更新程序重复启动或出现错误? 尝试提高更新检查间隔? ###");
+        m.repeatedRunUpdate = gm("repeatedRunUpdate", "### 更新程序重复启动或出现错误? ###");
         m.updateStart = gm("updateStart", "[## 开始运行自动更新 ##]");
         m.configErrList = gm("configErrList", "更新列表配置错误? ");
         m.configErrUpdate = gm("configErrUpdate", "更新列表配置错误? 项目为空");
@@ -928,7 +937,6 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
         m.debugErrUrlResolveNoID = gm("debugErrUrlResolveNoID", "URL 解析错误, 不包含插件 ID?: %1");
         m.debugErrUrlResolveNoName = gm("debugErrUrlResolveNoName", "URL 解析错误, 未找到项目名称: %1");
         m.debugErrNoID = gm("debugErrNoID", "未找到项目 ID: %1");
-        m.httpRequestFailed = gm("httpRequestFailed", "请求失败? (%1): %2");
         m.urlInvalid = gm("urlInvalid", "URL 无效或不规范: %1");
     }
 }

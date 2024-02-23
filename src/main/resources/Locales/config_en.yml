@@ -48,7 +48,7 @@ logLevel:
 
 
 # Plugin List
-# The URL supports automatic download of plugins from `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` pages, while other links will download them directly.
+# The URL supports automatic download of plugins from `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2, MineBBS, CurseForge` pages, while other links will download them directly.
 # One of the `GitHub, Jenkins, Modrinth` pages can use the get parameter to download a specific file.
 # GitHub links can be configured with `getPreRelease: true` to download the latest pre-release version.
 list:
@@ -83,6 +83,9 @@ list:
 
 #  - file: 'HttpRequests.jar' # SpigotMC
 #    url: https://www.spigotmc.org/resources/http-requests.101253/
+
+#  - file: 'chunky.jar' # MineBBS
+#    url: https://www.minebbs.com/resources/chunky-tps.7318/
 
 #  - file: 'SF4_Slimefun4.jar' # 鬼斩构建站 v2
 #    url: https://builds.guizhanss.com/StarWishsama/Slimefun4/master
@@ -121,7 +124,7 @@ message:
   commandFullLog: 'Full log:'
   commandStopUpdateIng: 'Current updates are being stopped...'
   stopUpdate: 'Too many requests'
-  repeatedRunUpdate: '### The update program started repeatedly or with errors? Trying to increase update check interval? ###'
+  repeatedRunUpdate: '### The update program started repeatedly or with errors? ###'
   updateStart: '[### Start running automatic updates ##]'
   configErrList: 'Error configuring update list? '
   configErrUpdate: 'Update list configuration error? Item is empty.'
@@ -147,5 +150,4 @@ message:
   debugErrUrlResolveNoID: 'URL resolving error, plugin ID not included?'
   debugErrUrlResolveNoName: 'URL resolution error, project name not found: %1'
   debugErrNoID: 'Project ID not found: %1'
-  httpRequestFailed: 'Request failed? (%1): %2'
   urlInvalid: 'URL is invalid or irregular: %1'

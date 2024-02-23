@@ -18,7 +18,7 @@
 
 - [x] 使用 `update` 目录进行插件更新
 - [x] 根据插件发布页自动找到下载链接
-  - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, 鬼斩构建站 v2`
+  - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, 鬼斩构建站 v2, MineBBS, CurseForge`
     - 支持下载 GitHub 中的预发布版本
 - [x] 支持匹配相同发布下的不同文件
   - `GitHub, Jenkins, Modrinth`
@@ -49,9 +49,6 @@
 [INFO]: [AUP] [CoreProtect.jar] [Modrinth] 找到版本: https://cdn.modrinth.com/data/Lu3KuzdV/versions/w3P6ufP1/CoreProtect-22.2.jar
 [INFO]: [AUP] [CoreProtect.jar] 文件已是最新版本
 ...
-[INFO]: [AUP] [Dynmap网页地图.jar] 正在更新...
-[WARN]: [AUP] [Dynmap网页地图.jar] [HTTP] 请求失败? (403): https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
-[WARN]: [AUP] [Dynmap网页地图.jar] [CurseForge] 解析文件直链时出现错误, 将跳过此更新
 [INFO]: [AUP] [## 更新全部完成 ##]
 [INFO]: [AUP]   - 耗时: 268 秒
 [INFO]: [AUP]   - 失败: 2, 更新: 22, 完成: 24

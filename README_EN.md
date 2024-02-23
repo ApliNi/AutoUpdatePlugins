@@ -16,7 +16,7 @@ Download: https://modrinth.com/plugin/AutoUpdatePlugins
 
 - [x] Using the `update` directory for plugin updates
 - [x] Automatically find download links based on plugin release page
-    - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, Ghost Chop Build Station v2`.
+    - `GitHub, Jenkins, Spigot, Modrinth, Bukkit, Ghost Chop Build Station v2, MineBBS, CurseForge`.
         - Support downloading pre-releases from GitHub.
 - [x] Support matching different files under the same release
     - `GitHub, Jenkins, Modrinth`.
@@ -47,9 +47,6 @@ Download: https://modrinth.com/plugin/AutoUpdatePlugins
 [INFO]: [AUP] [CoreProtect.jar] [Modrinth] Version found: https://cdn.modrinth.com/data/Lu3KuzdV/versions/w3P6ufP1/CoreProtect-22.2.jar
 [INFO]: [AUP] [CoreProtect.jar] file is up to date!
 ...
-[INFO]: [AUP] [Dynmap.jar] is being updated...
-[WARN]: [AUP] [Dynmap.jar] [HTTP] Request failed? (403): https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
-[WARN]: [AUP] [Dynmap.jar] [CurseForge] Error parsing direct file link, will skip this update.
 [INFO]: [AUP] [## Update all done ##]
 [INFO]: [AUP] - Time consumed: 268 seconds
 [INFO]: [AUP] - Failed: 2, Updated: 22, Completed: 24
