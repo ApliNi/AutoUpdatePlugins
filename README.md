@@ -87,8 +87,11 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # 如果下载后的文件哈希与更新目录中待更新的文件 (或者服务器正在运行的文件) 哈希值一致则不移动到更新目录 (MD5
 ignoreDuplicates: true
 
-# 全局禁用证书验证, 修改后需要重启
-disableCertificateVerification: false
+# 设置网络代理
+proxy:
+  type: DIRECT # DIRECT | HTTP | SOCKS
+  host: '127.0.0.1'
+  port: 7890
 
 # HTTP 请求中编辑请求头
 setRequestProperty:
@@ -105,7 +108,7 @@ logLevel:
 
 
 # 插件列表
-# URL 支持自动下载 `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` 页面的插件, 其他链接将直接下载
+# URL 支持自动下载 `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2, MineBBS, CurseForge` 页面的插件, 其他链接将直接下载
 # 其中 `GitHub, Jenkins, Modrinth` 页面可以使用 get 参数下载指定文件
 # GitHub 链接可添加配置 `getPreRelease: true` 来下载最新的预发布版本
 list:
@@ -141,11 +144,17 @@ list:
 #  - file: 'HttpRequests网络请求.jar' # SpigotMC
 #    url: https://www.spigotmc.org/resources/http-requests.101253/
 
+#  - file: 'Chunky区块预加载.jar' # MineBBS
+#    url: https://www.minebbs.com/resources/chunky-tps.7318/
+
 #  - file: 'SF4_Slimefun4粘液科技.jar' # 鬼斩构建站 v2
 #    url: https://builds.guizhanss.com/StarWishsama/Slimefun4/master
 
 #  - file: 'SF4_FluffyMachines蓬松科技.jar'
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
+
+#  - file: 'Dynmap网页地图.jar'
+#    url: https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
 
 #  # 可以像这样为每个文件添加配置
 #  # 如果 file 配置中包含路径, 则自动设置 path 参数

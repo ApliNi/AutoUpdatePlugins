@@ -84,7 +84,7 @@ list:
 #  - file: 'HttpRequests.jar' # SpigotMC
 #    url: https://www.spigotmc.org/resources/http-requests.101253/
 
-#  - file: 'chunky.jar' # MineBBS
+#  - file: 'Chunky.jar' # MineBBS
 #    url: https://www.minebbs.com/resources/chunky-tps.7318/
 
 #  - file: 'SF4_Slimefun4.jar' # 鬼斩构建站 v2
@@ -92,6 +92,9 @@ list:
 
 #  - file: 'SF4_FluffyMachines.jar'
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
+
+#  - file: 'Dynmap.jar'
+#    url: https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
 
 #  # Configuration can be added to each file like this
 #  # If the file configuration contains a path, the path parameter is automatically set.

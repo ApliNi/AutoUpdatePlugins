@@ -85,8 +85,11 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # Do not move to the update directory if the hash of the downloaded file matches the hash of the file to be updated in the update directory (or the file running on the server) (MD5)
 ignoreDuplicates: true
 
-# Disable certificate validation globally, need to reboot after modification.
-disableCertificateVerification: false
+# Setting up a web proxy
+proxy:
+  type: DIRECT # DIRECT | HTTP | SOCKS
+  host: '127.0.0.1'
+  port: 7890
 
 # Edit request headers in HTTP requests
 setRequestProperty:
@@ -103,7 +106,7 @@ logLevel:
 
 
 # Plugin List
-# The URL supports automatic download of plugins from `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2` pages, while other links will download them directly.
+# The URL supports automatic download of plugins from `GitHub, Jenkins, SpigotMC, Modrinth, Bukkit, 鬼斩构建站 v2, MineBBS, CurseForge` pages, while other links will download them directly.
 # One of the `GitHub, Jenkins, Modrinth` pages can use the get parameter to download a specific file.
 # GitHub links can be configured with `getPreRelease: true` to download the latest pre-release version.
 list:
@@ -139,11 +142,17 @@ list:
 #  - file: 'HttpRequests.jar' # SpigotMC
 #    url: https://www.spigotmc.org/resources/http-requests.101253/
 
+#  - file: 'Chunky.jar' # MineBBS
+#    url: https://www.minebbs.com/resources/chunky-tps.7318/
+
 #  - file: 'SF4_Slimefun4.jar' # 鬼斩构建站 v2
 #    url: https://builds.guizhanss.com/StarWishsama/Slimefun4/master
 
 #  - file: 'SF4_FluffyMachines.jar'
 #    url: https://builds.guizhanss.com/SlimefunGuguProject/FluffyMachines/master
+
+#  - file: 'Dynmap.jar'
+#    url: https://legacy.curseforge.com/minecraft/bukkit-plugins/dynmap
 
 #  # Configuration can be added to each file like this
 #  # If the file configuration contains a path, the path parameter is automatically set.
