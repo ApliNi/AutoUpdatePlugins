@@ -683,27 +683,40 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             return in1;
         }
 
-        // 获取 OkHttp Client
-        public OkHttpClient getOkHttpClient(){
+        // 获取 HTTP 请求实例
+        public okhttp3.Call fetch(String url, boolean head){
             _allRequests ++;
-            OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
+            // HTTP 客户端
+            OkHttpClient.Builder client = new OkHttpClient.Builder();
             // 启用网络代理
             if(!getConfig().getString("proxy.type", "DIRECT").equals("DIRECT")){
-                okHttpClient.proxy(new Proxy(
+                client.proxy(new Proxy(
                         Proxy.Type.valueOf(getConfig().getString("proxy.type")),
                         new InetSocketAddress(
                                 getConfig().getString("proxy.host", "127.0.0.1"),
                                 getConfig().getInt("proxy.port", 7890))));
             }
-            return okHttpClient.build();
+
+            // 请求实例
+            Request.Builder request = new Request.Builder()
+                    .url(url);
+            // 请求方式
+            if(head){request.head();}
+            // 添加请求头
+            List<?> list = (List<?>) getConfig().get("setRequestProperty");
+            if(list != null){
+                for(Object _li : list) {
+                    Map<?, ?> li = (Map<?, ?>) _li;
+                    request.header((String) li.get("name"), (String) li.get("value"));
+                }
+            }
+
+            return client.build().newCall(request.build());
         }
 
         // http 请求获取字符串
         public String httpGet(String url) {
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
-            try (Response response = getOkHttpClient().newCall(request).execute()) {
+            try (Response response = fetch(url, false).execute()) {
                 if (!response.isSuccessful()) {
                     return null;
                 }
@@ -716,10 +729,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 下载文件到指定目录
         public boolean downloadFile(String url, String path) {
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
-            try (Response response = getOkHttpClient().newCall(request).execute()) {
+            try (Response response = fetch(url, false).execute()) {
                 if(!response.isSuccessful()){
                     return false;
                 }
@@ -741,11 +751,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
 
         // 通过 HEAD 请求获取一些特征信息
         public String getFeature(String url){
-            Request request = new Request.Builder()
-                    .head()
-                    .url(url)
-                    .build();
-            try (Response response = getOkHttpClient().newCall(request).execute()) {
+            try (Response response = fetch(url, true).execute()) {
                 if(!response.isSuccessful()){
                     return "??_"+ nowDate().hashCode();
                 }
@@ -758,7 +764,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                     return "LH_"+ location.hashCode();
                 }
             } catch (IOException e) {
-                log(logLevel.NET_WARN, "[[HTTP.HEAD] "+ e.getMessage());
+                log(logLevel.NET_WARN, "[HTTP.HEAD] "+ e.getMessage());
             }
             return "??_"+ nowDate().hashCode();
         }
