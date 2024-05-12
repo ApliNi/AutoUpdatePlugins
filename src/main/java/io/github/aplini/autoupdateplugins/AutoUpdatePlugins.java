@@ -388,7 +388,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 // 下载文件到缓存目录
                 String dUrl = getFileUrl(c_url, c_get);
                 if(dUrl == null){
-                    log(logLevel.WARN, _fileName + _nowParser + m.updateErrParsingDUrl);
+                    log(logLevel.WARN, _nowParser + m.updateErrParsingDUrl);
                     continue;
                 }
                 dUrl = checkURL(dUrl);
