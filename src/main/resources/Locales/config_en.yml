@@ -27,6 +27,9 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # Do not move to the update directory if the hash of the downloaded file matches the hash of the file to be updated in the update directory (or the file running on the server) (MD5)
 ignoreDuplicates: true
 
+# Whether to enable SSL authentication, usually do not turn it off
+sslVerify: true
+
 # Setting up a web proxy
 proxy:
   type: DIRECT # DIRECT | HTTP | SOCKS

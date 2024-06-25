@@ -19,10 +19,7 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -34,6 +31,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -688,6 +687,7 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
             _allRequests ++;
             // HTTP 客户端
             OkHttpClient.Builder client = new OkHttpClient.Builder();
+
             // 启用网络代理
             if(!getConfig().getString("proxy.type", "DIRECT").equals("DIRECT")){
                 client.proxy(new Proxy(
@@ -695,6 +695,32 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                         new InetSocketAddress(
                                 getConfig().getString("proxy.host", "127.0.0.1"),
                                 getConfig().getInt("proxy.port", 7890))));
+            }
+
+            // 禁用 SSL 验证
+            if(!getConfig().getBoolean("sslVerify", true)){
+                // 设置自定义的 TrustManager 和 HostnameVerifier
+                try {
+                    // 创建一个信任所有证书的信任管理器
+                    X509TrustManager trustManager = new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    };
+
+                    SSLContext sslContext = SSLContext.getInstance("SSL");
+                    sslContext.init(null, new TrustManager[] { trustManager }, new SecureRandom());
+                    // 使用信任所有证书的 SSLSocketFactory
+                    client.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
+
+                } catch (Exception e) {
+                    log(logLevel.NET_WARN, "[HTTP] [sslVerify: false]" + e.getMessage());
+                }
             }
 
             // 请求实例

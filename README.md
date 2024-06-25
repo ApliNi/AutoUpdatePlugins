@@ -87,6 +87,9 @@ zipFileCheckList: '\.(?:jar|zip)$'
 # 如果下载后的文件哈希与更新目录中待更新的文件 (或者服务器正在运行的文件) 哈希值一致则不移动到更新目录 (MD5
 ignoreDuplicates: true
 
+# 是否启用 SSL 验证, 通常情况请勿关闭
+sslVerify: true
+
 # 设置网络代理
 proxy:
   type: DIRECT # DIRECT | HTTP | SOCKS
