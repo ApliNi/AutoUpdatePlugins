@@ -587,18 +587,20 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 if(matcher.find()) {
                     String data = httpGet("https://api.modrinth.com/v2/project"+ matcher.group(0) +"/version");
                     if(data == null){return null;}
-                    // 0 为最新的一个版本
-                    Map<?, ?> map = (Map<?, ?>) ((ArrayList<?>) new Gson().fromJson(data, ArrayList.class)).get(0);
-                    ArrayList<?> files = (ArrayList<?>) map.get("files");
-
-                    // 遍历发布文件列表
-                    for(Object _li : files){
-                        Map<?, ?> li = (Map<?, ?>) _li;
-                        String fileName = (String) li.get("filename");
-                        if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
-                            String dUrl = (String) li.get("url");
-                            log(logLevel.DEBUG, _nowParser + m.piece(m.debugGetVersion, dUrl));
-                            return dUrl;
+                    ArrayList<?> versions = new Gson().fromJson(data, ArrayList.class);
+                    // 遍历版本列表
+                    for(Object _version : versions){
+                        Map<?, ?> version = (Map<?, ?>) _version;
+                        ArrayList<?> files = (ArrayList<?>) version.get("files");
+                        // 遍历发布文件列表
+                        for(Object _file : files){
+                            Map<?, ?> file = (Map<?, ?>) _file;
+                            String fileName = (String) file.get("filename");
+                            if(matchFileName.isEmpty() || Pattern.compile(matchFileName).matcher(fileName).matches()){
+                                String dUrl = (String) file.get("url");
+                                log(logLevel.DEBUG, _nowParser + m.piece(m.debugGetVersion, dUrl));
+                                return dUrl;
+                            }
                         }
                     }
                     log(logLevel.WARN, "[Modrinth] "+ m.piece(m.debugNoFileMatching, url));
@@ -622,13 +624,17 @@ public final class AutoUpdatePlugins extends JavaPlugin implements Listener, Com
                 // 获取路径 "/ApliNi/plugin/master"
                 Matcher matcher = Pattern.compile("/([^/]+)/([^/]+)/([^/]+)$").matcher(url);
                 if(matcher.find()){
-                    // 获取所有发布中的第一个版本
-                    String data = httpGet("https://builds.guizhanss.com/api/builds" + matcher.group(0));
-                    if(data == null){return null;}
-                    ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, HashMap.class).get("data");
-                    Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
+                    // 此部分注释的代码被新的 API 替代
+//                    // 获取所有发布中的第一个版本
+//                    String data = httpGet("https://builds.guizhanss.com/api/builds" + matcher.group(0));
+//                    if(data == null){return null;}
+//                    ArrayList<?> arr = (ArrayList<?>) new Gson().fromJson(data, HashMap.class).get("data");
+//                    Map<?, ?> map = (Map<?, ?>) arr.get(arr.size() - 1); // 获取最后一项
+//
+//                    String dUrl = "https://builds.guizhanss.com/r2"+ matcher.group(0) +"/"+ map.get("target");
 
-                    String dUrl = "https://builds.guizhanss.com/r2"+ matcher.group(0) +"/"+ map.get("target");
+                    // 现在可以获取直连
+                    String dUrl = "https://builds.guizhanss.com/api/download"+ matcher.group(0) +"/latest";
                     log(logLevel.DEBUG, _nowParser + m.piece(m.debugGetVersion, dUrl));
                     return dUrl;
                 }
