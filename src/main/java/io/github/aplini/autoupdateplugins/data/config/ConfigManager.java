@@ -5,22 +5,25 @@ import lombok.Getter;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class ConfigManager {
+    private final AutoUpdate plugin;
     @Getter
     private ConfigInstance instance;
-    private final AutoUpdate plugin;
-    public ConfigManager(AutoUpdate plugin){
+
+    public ConfigManager(AutoUpdate plugin) {
         this.plugin = plugin;
         plugin.reloadConfig();
         FileConfiguration reader = plugin.getConfig();
-        instance = reader.getObject("",ConfigInstance.class, new ConfigInstance());
+        instance = reader.getObject("", ConfigInstance.class, new ConfigInstance());
     }
-    public void save(){
-        AutoUpdate.getPlugin(AutoUpdate.class).getConfig().set("",instance);
+
+    public void save() {
+        AutoUpdate.getPlugin(AutoUpdate.class).getConfig().set("", instance);
         AutoUpdate.getPlugin(AutoUpdate.class).saveConfig();
     }
-    public void reload(){
+
+    public void reload() {
         plugin.reloadConfig();
         FileConfiguration reader = plugin.getConfig();
-        instance = reader.getObject("",ConfigInstance.class, new ConfigInstance());
+        instance = reader.getObject("", ConfigInstance.class, new ConfigInstance());
     }
 }

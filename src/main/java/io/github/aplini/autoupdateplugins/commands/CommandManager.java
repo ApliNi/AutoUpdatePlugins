@@ -19,15 +19,17 @@ import java.util.List;
 public class CommandManager implements CommandExecutor, TabCompleter {
     public final ArrayList<SubCommand> subCommands = new ArrayList<>();
     private final AutoUpdate plugin;
+
     public CommandManager(AutoUpdate plugin) {
         this.plugin = plugin;
         subCommands.add(new reload(plugin));
         subCommands.add(new update());
     }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
         if (args.length == 0) {
-            for(SubCommand subCommand : subCommands)
+            for (SubCommand subCommand : subCommands)
                 Util.Message(sender, String.format("%s - %s", subCommand.usage, subCommand.description));
             return true;
         }
@@ -45,19 +47,18 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
-        if(!(sender instanceof Player))
+        if (!(sender instanceof Player))
             return null;
-        if(args.length==1)
-        {
+        if (args.length == 1) {
             List<String> result = new ArrayList<>();
             for (SubCommand subCommand : subCommands)
-                if(sender.hasPermission(subCommand.permission))
+                if (sender.hasPermission(subCommand.permission))
                     result.add(subCommand.name);
             return result;
         }
         for (SubCommand subCommand : subCommands)
-            if(subCommand.name.equals(args[0]) && sender.hasPermission(subCommand.permission))
-                return subCommand.onTab((Player) sender, Arrays.copyOfRange(args,1,args.length));
+            if (subCommand.name.equals(args[0]) && sender.hasPermission(subCommand.permission))
+                return subCommand.onTab((Player) sender, Arrays.copyOfRange(args, 1, args.length));
         return null;
     }
 

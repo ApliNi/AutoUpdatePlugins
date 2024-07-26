@@ -1,4 +1,4 @@
-package io.github.aplini.autoupdateplugins.bean;
+package io.github.aplini.autoupdateplugins.beans;
 
 import lombok.Getter;
 
@@ -11,6 +11,7 @@ public class UpdateItem {
     private String filePath;
     private String path;
     private String get;
+    private String fileNamePattern;
     private boolean getPreRelease;
     private boolean zipFileCheck;
     private boolean ignoreDuplicates;

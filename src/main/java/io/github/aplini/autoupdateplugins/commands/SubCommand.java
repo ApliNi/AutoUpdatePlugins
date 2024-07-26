@@ -7,11 +7,14 @@ import java.util.List;
 
 @Getter
 public abstract class SubCommand {
-    public abstract void onCommand(Player player, String[] args);
-    public abstract List<String> onTab(Player player, String[] args);
-    public abstract void reloadMessage();
     public String name;
     public String permission;
     public String usage;
     public String description;
+
+    public abstract void onCommand(Player player, String[] args);
+
+    public abstract List<String> onTab(Player player, String[] args);
+
+    public abstract void reloadMessage();
 }

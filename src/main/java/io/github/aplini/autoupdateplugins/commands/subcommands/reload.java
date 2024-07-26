@@ -8,13 +8,15 @@ import java.util.List;
 
 public class reload extends SubCommand {
     AutoUpdate p;
-    public reload(AutoUpdate plugin){
+
+    public reload(AutoUpdate plugin) {
         this.name = "reload";
         this.permission = "aup.admin";
         this.usage = plugin.getMessageManager().getInstance().getCommands().getUsage().getRELOAD();
         this.description = plugin.getMessageManager().getInstance().getCommands().getDescription().getRELOAD();
         p = plugin;
     }
+
     @Override
     public void onCommand(Player player, String[] args) {
         p.reloadConfig();

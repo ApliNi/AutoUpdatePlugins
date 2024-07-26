@@ -18,6 +18,7 @@ public class AutoUpdate extends JavaPlugin {
     public final CommandManager commandManager = new CommandManager(this);
     @Getter
     public final MessageManager messageManager;
+
     {
         try {
             messageManager = new MessageManager(configManager.getInstance().getLanguage(), this);
@@ -25,18 +26,39 @@ public class AutoUpdate extends JavaPlugin {
             throw new RuntimeException(e);
         }
     }
+
     @Override
     public void onEnable() {
         Objects.requireNonNull(Bukkit.getPluginCommand("aup")).setExecutor(commandManager);
     }
+
     @Override
     public void onDisable() {
         configManager.save();
     }
+
     @Override
     public void reloadConfig() {
         configManager.reload();
         messageManager.reload();
         commandManager.reload();
+    }
+
+    public void log(LogLevel level, String text) {
+        if (configManager.getInstance().getLogLevel().contains(level.name())) {
+            switch (level.getName()) {
+                case "DEBUG", "INFO":
+                    getLogger().info(text);
+                    break;
+                case "MARK":
+                    // 一些新版本的控制台似乎很难显示颜色
+                    Bukkit.getConsoleSender().sendMessage(level.getColor() + "[AUP] " + text);
+                    break;
+                case "WARN", "NET_WARN":
+                    getLogger().warning(text);
+                    break;
+            }
+        }
+        //logList.add(level.color + (level.name.equals("INFO") ? "" : _fileName) + text);
     }
 }
