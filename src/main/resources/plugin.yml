@@ -1,6 +1,6 @@
 name: AutoUpdatePlugins
 version: '${project.version}'
-main: io.github.aplini.autoupdateplugins.AutoUpdatePlugins
+main: io.github.aplini.autoupdateplugins.AutoUpdate
 api-version: '1.16'
 folia-supported: true
 prefix: AUP
@@ -8,10 +8,5 @@ author: ApliNi
 
 commands:
   aup:
-    description: 使用插件命令
-    permission: aup.command
-
-permissions:
-  aup.command:
-    description: 使用插件命令
-    default: op
+    description: AutoUpdatePlugins
+    usage: "/aup"
