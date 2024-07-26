@@ -3,6 +3,7 @@ package io.github.aplini.autoupdateplugins;
 import io.github.aplini.autoupdateplugins.commands.CommandManager;
 import io.github.aplini.autoupdateplugins.data.config.ConfigManager;
 import io.github.aplini.autoupdateplugins.data.message.MessageManager;
+import io.github.aplini.autoupdateplugins.data.temp.TempDataManager;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -13,11 +14,13 @@ import java.util.Objects;
 
 public class AutoUpdate extends JavaPlugin {
     @Getter
-    public final ConfigManager configManager = new ConfigManager(this);
+    private final ConfigManager configManager = new ConfigManager(this);
     @Getter
-    public final CommandManager commandManager = new CommandManager(this);
+    private final CommandManager commandManager = new CommandManager(this);
     @Getter
-    public final MessageManager messageManager;
+    private final MessageManager messageManager;
+    @Getter
+    private final TempDataManager tempDataManager = new TempDataManager(this);
 
     {
         try {
@@ -35,6 +38,7 @@ public class AutoUpdate extends JavaPlugin {
     @Override
     public void onDisable() {
         configManager.save();
+        tempDataManager.save();
     }
 
     @Override

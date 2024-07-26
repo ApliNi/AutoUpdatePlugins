@@ -40,6 +40,11 @@ public class MessageInstance {
         private final String tempAlreadyLatest = "§a[Cache] File is already the latest version.§r";
         private final String errDownload = "§cError downloading file, skipping this update.§r";
         private final String zipFileCheck = "§a[Zip integrity check] File is not complete, skipping this update.§r";
+        private final String findDownloadUrl = "§aFind download url: {url}§r";
+        private final String noFileMatching = "§cNo file matching.§r";
+        private final String resourceNotFound = "§cResource not found.§r";
+        private final String listConfigErrMissing = "§cUpdate list configuration error or Missing basic configuration§r";
+        private final String fileSizeDifference = "§cFile size difference: Old - {old}bytes, New {new}bytes.§r";
         private final Github Github = new Github();
         @Getter
         public class Github {

@@ -36,12 +36,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         for (SubCommand subCommand : subCommands)
             if (subCommand.name.equals(args[0])) {
                 if (!sender.hasPermission(subCommand.permission))
-                    Util.Message(sender, plugin.messageManager.getInstance().getNoPermission());
+                    Util.Message(sender, plugin.getMessageManager().getInstance().getNoPermission());
                 else
                     subCommand.onCommand((Player) sender, Arrays.copyOfRange(args, 1, args.length));
                 return true;
             }
-        Util.Message(sender, plugin.messageManager.getInstance().getNoSuchCommand());
+        Util.Message(sender, plugin.getMessageManager().getInstance().getNoSuchCommand());
         return true;
     }
 

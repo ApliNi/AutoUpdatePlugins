@@ -18,7 +18,7 @@ public class MessageManager {
     private MessageInstance instance;
 
     public MessageManager(String lang, AutoUpdate plugin) throws IOException {
-        file = new File(plugin.getDataFolder() + "message.yml");
+        file = new File(new File(String.valueOf(plugin.getDataFolder())), "message.yml");
         if (file.exists()) {
             file.createNewFile();
             InputStream is;
