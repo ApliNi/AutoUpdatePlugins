@@ -1,6 +1,6 @@
 package io.github.aplini.autoupdateplugins.utils;
 
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.beans.UpdateItem;
 import io.github.aplini.autoupdateplugins.data.config.ConfigInstance;
 import io.github.aplini.autoupdateplugins.update.UpdateInstance;
@@ -85,7 +85,7 @@ public class Util {
     }
     public static UpdateInstance getUpdateInstance(
             int delay, int cycle, Proxy proxy, List<ConfigInstance.Header> headers,
-            AutoUpdate plugin, List<UpdateItem> items, int poolSize,
+            AutoUpdatePlugin plugin, List<UpdateItem> items, int poolSize,
             boolean isCheckSSL) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         builder.proxy(proxy).addInterceptor(new Interceptor() {

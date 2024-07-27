@@ -1,6 +1,6 @@
 package io.github.aplini.autoupdateplugins.commands.subcommands;
 
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.commands.SubCommand;
 import org.bukkit.command.CommandSender;
 
@@ -8,8 +8,8 @@ import org.bukkit.command.CommandSender;
 import java.util.List;
 
 public class update extends SubCommand {
-    private final AutoUpdate plugin;
-    public update(AutoUpdate plugin) {
+    private final AutoUpdatePlugin plugin;
+    public update(AutoUpdatePlugin plugin) {
         this.name = "update";
         this.permission = "aup.admin";
         this.usage = plugin.getMessageManager().getInstance().getCommands().getUsage().getUPDATE();

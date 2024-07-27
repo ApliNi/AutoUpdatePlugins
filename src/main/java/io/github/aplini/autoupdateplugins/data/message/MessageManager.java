@@ -1,13 +1,12 @@
 package io.github.aplini.autoupdateplugins.data.message;
 
 import com.google.common.io.ByteStreams;
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import lombok.Getter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.*;
@@ -19,7 +18,7 @@ public class MessageManager {
     @Getter
     private MessageInstance instance;
 
-    public MessageManager(String lang, AutoUpdate plugin) throws IOException {
+    public MessageManager(String lang, AutoUpdatePlugin plugin) throws IOException {
         file = new File(plugin.getDataFolder(), "message.yml");
         if (!file.exists()) {
             file.createNewFile();

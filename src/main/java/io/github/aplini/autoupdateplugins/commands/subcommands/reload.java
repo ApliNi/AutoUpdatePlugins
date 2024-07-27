@@ -1,6 +1,6 @@
 package io.github.aplini.autoupdateplugins.commands.subcommands;
 
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.commands.SubCommand;
 import io.github.aplini.autoupdateplugins.data.config.ConfigInstance;
 import io.github.aplini.autoupdateplugins.utils.Util;
@@ -13,9 +13,9 @@ import java.util.List;
 import static io.github.aplini.autoupdateplugins.utils.Util.getUpdateInstance;
 
 public class reload extends SubCommand {
-    private final AutoUpdate plugin;
+    private final AutoUpdatePlugin plugin;
 
-    public reload(AutoUpdate plugin) {
+    public reload(AutoUpdatePlugin plugin) {
         this.name = "reload";
         this.permission = "aup.admin";
         this.usage = plugin.getMessageManager().getInstance().getCommands().getUsage().getRELOAD();

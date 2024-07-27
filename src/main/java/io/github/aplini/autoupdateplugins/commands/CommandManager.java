@@ -1,6 +1,6 @@
 package io.github.aplini.autoupdateplugins.commands;
 
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.commands.subcommands.reload;
 import io.github.aplini.autoupdateplugins.commands.subcommands.stop;
 import io.github.aplini.autoupdateplugins.commands.subcommands.update;
@@ -9,7 +9,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,9 +18,9 @@ import java.util.List;
 
 public class CommandManager implements CommandExecutor, TabCompleter {
     public final ArrayList<SubCommand> subCommands = new ArrayList<>();
-    private final AutoUpdate plugin;
+    private final AutoUpdatePlugin plugin;
 
-    public CommandManager(AutoUpdate plugin) {
+    public CommandManager(AutoUpdatePlugin plugin) {
         this.plugin = plugin;
         subCommands.add(new reload(plugin));
         subCommands.add(new update(plugin));

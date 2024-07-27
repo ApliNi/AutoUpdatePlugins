@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.beans.TempData;
 import lombok.Getter;
 
@@ -21,8 +21,8 @@ public class TempDataManager {
     @Getter
     private final Map<String, TempData> tempDataMap;
     private final File file;
-    private final AutoUpdate plugin;
-    public TempDataManager(AutoUpdate plugin) {
+    private final AutoUpdatePlugin plugin;
+    public TempDataManager(AutoUpdatePlugin plugin) {
         this.plugin = plugin;
         Map<String, TempData> map;
         this.file = new File(plugin.getDataFolder(), "temp.json");

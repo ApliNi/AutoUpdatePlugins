@@ -1,6 +1,6 @@
 name: AutoUpdatePlugins
 version: '${project.version}'
-main: io.github.aplini.autoupdateplugins.AutoUpdate
+main: io.github.aplini.autoupdateplugins.AutoUpdatePlugin
 api-version: '1.16'
 folia-supported: true
 prefix: AUP

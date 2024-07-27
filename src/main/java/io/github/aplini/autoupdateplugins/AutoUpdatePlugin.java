@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class AutoUpdate extends JavaPlugin {
+public class AutoUpdatePlugin extends JavaPlugin {
     @Getter
     private final ConfigManager configManager = new ConfigManager(this);
     @Getter

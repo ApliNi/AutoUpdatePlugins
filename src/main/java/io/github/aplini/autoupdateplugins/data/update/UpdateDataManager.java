@@ -1,7 +1,7 @@
 package io.github.aplini.autoupdateplugins.data.update;
 
 import com.google.common.io.ByteStreams;
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.beans.UpdateItem;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +22,7 @@ public class UpdateDataManager {
     private final Yaml yaml;
     @Getter
     private Instance instance;
-    public UpdateDataManager(String lang, AutoUpdate plugin) throws IOException {
+    public UpdateDataManager(String lang, AutoUpdatePlugin plugin) throws IOException {
         file = new File(plugin.getDataFolder(), "update.yml");
         if (!file.exists()) {
             file.createNewFile();

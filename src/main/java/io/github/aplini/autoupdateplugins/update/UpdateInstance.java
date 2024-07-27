@@ -2,7 +2,7 @@ package io.github.aplini.autoupdateplugins.update;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import io.github.aplini.autoupdateplugins.LogLevel;
 import io.github.aplini.autoupdateplugins.beans.CurseForge.CurseForgeData;
 import io.github.aplini.autoupdateplugins.beans.Github.GithubAPI;
@@ -20,7 +20,6 @@ import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +30,6 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Vector;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -44,8 +42,8 @@ import static io.github.aplini.autoupdateplugins.utils.Util.*;
 public class UpdateInstance {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(8);
     private final _scheduleTask task;
-    private final AutoUpdate plugin;
-    public UpdateInstance(int delay, int interval, OkHttpClient client, List<UpdateItem> items, AutoUpdate plugin, int poolSize) {
+    private final AutoUpdatePlugin plugin;
+    public UpdateInstance(int delay, int interval, OkHttpClient client, List<UpdateItem> items, AutoUpdatePlugin plugin, int poolSize) {
         this.plugin = plugin;
         task = new _scheduleTask(items, client, plugin, poolSize);
         scheduledExecutorService.scheduleAtFixedRate(task, delay, interval, java.util.concurrent.TimeUnit.SECONDS);
@@ -66,7 +64,7 @@ public class UpdateInstance {
     private class  _scheduleTask implements Runnable {
         final List<UpdateItem> items;
         final OkHttpClient client;
-        final AutoUpdate plugin;
+        final AutoUpdatePlugin plugin;
         final int poolSize;
         final AtomicBoolean isUpdating = new AtomicBoolean(false);
         @Getter
@@ -74,7 +72,7 @@ public class UpdateInstance {
         @Getter
         final ExecutorService executor;
 
-        private _scheduleTask(List<UpdateItem> items, OkHttpClient client, AutoUpdate plugin, int poolSize) {
+        private _scheduleTask(List<UpdateItem> items, OkHttpClient client, AutoUpdatePlugin plugin, int poolSize) {
             this.items = items;
             this.client = client;
             this.plugin = plugin;
@@ -109,7 +107,7 @@ public class UpdateInstance {
         }
 
         private record _updateTask(UpdateItem item, OkHttpClient client,
-                                   MessageManager messageManager, AutoUpdate plugin,
+                                   MessageManager messageManager, AutoUpdatePlugin plugin,
                                    ConcurrentHashMap<UpdateItem, Boolean> processed
                                    ) implements Runnable {
             @Override

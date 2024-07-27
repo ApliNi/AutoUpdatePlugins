@@ -1,6 +1,6 @@
 package io.github.aplini.autoupdateplugins.data.config;
 
-import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.AutoUpdatePlugin;
 import lombok.Getter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.yaml.snakeyaml.DumperOptions;
@@ -16,12 +16,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class ConfigManager {
-    private final AutoUpdate plugin;
+    private final AutoUpdatePlugin plugin;
     @Getter
     private ConfigInstance instance;
     private final File file;
     private final Yaml yaml;
-    public ConfigManager(AutoUpdate plugin) {
+    public ConfigManager(AutoUpdatePlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "config.yml");
         if (!file.exists()) {
