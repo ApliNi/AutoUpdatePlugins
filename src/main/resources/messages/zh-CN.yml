@@ -1,0 +1,31 @@
+commands:
+  description:
+    LOG: "打印插件日志"
+    RELOAD: "重载配置和消息"
+    STOP: "终止当前的升级任务"
+    UPDATE: "开始升级插件"
+  usage:
+    LOG: /aup log
+    RELOAD: /aup reload
+    STOP: /aup stop
+    UPDATE: /aup update
+failedMessage: "出现问题, 请检查服务器控制台."
+noPermission: "你没有权限使用这个命令."
+noSuchCommand: "没有该条指令."
+reloadMessage: "停止更新计划并重新加载数据!"
+successMessage: "成功!"
+update:
+  checking: "正在检查更新..."
+  errDownload: "下载文件出错, 跳过此次更新."
+  errParsingDirectUrl: "解析文件直接链接出错, 跳过此次更新."
+  errStartRepeatedly: "更新程序重复启动."
+  fileSizeDifference: '文件大小差异: 旧 - {old}bytes, 新 - {new}bytes.'
+  findDownloadUrl: '找到下载链接: {url}'
+  github:
+    repoNotFound: "仓库 '{owner}/{repo}' 未找到。"
+  listConfigErrMissing: "更新列表配置错误或缺少基本配置"
+  noFileMatching: "没有匹配的文件."
+  resourceNotFound: "资源未找到."
+  succeedGetType: '目标类型: {type}'
+  tempAlreadyLatest: "[Cache] 文件已是最新版本."
+  zipFileCheck: "[压缩完整性检查] 文件不完整, 跳过此次更新."

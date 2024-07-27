@@ -1,0 +1,31 @@
+commands:
+  description:
+    LOG: Show Plugin Log
+    RELOAD: Reload Config & Message
+    STOP: Stop Current Update Task
+    UPDATE: Start Plugin Update
+  usage:
+    LOG: /aup log
+    RELOAD: /aup reload
+    STOP: /aup stop
+    UPDATE: /aup update
+failedMessage: Something went wrong. Please Check console.
+noPermission: You don't have permission to use this command.
+noSuchCommand: No such command.
+reloadMessage: Stopping Update Schedule & Reloading Data!
+successMessage: Success!
+update:
+  checking: Checking for updates...
+  errDownload: Error downloading file, skipping this update.
+  errParsingDirectUrl: Error parsing file direct link, skipping this update.
+  errStartRepeatedly: Updater start repeatedly.
+  fileSizeDifference: 'File size difference: Old - {old}bytes, New - {new}bytes.'
+  findDownloadUrl: 'Find download url: {url}'
+  github:
+    repoNotFound: Repository '{owner}/{repo}' not found.
+  listConfigErrMissing: Update list configuration error or Missing basic configuration
+  noFileMatching: No file matching.
+  resourceNotFound: Resource not found.
+  succeedGetType: 'Target type: {type}'
+  tempAlreadyLatest: [Cache] File is already the latest version.
+  zipFileCheck: [Zip integrity check] File is not complete, skipping this update.

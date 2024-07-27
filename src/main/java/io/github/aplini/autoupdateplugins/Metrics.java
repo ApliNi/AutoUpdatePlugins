@@ -631,7 +631,7 @@ public class Metrics {
                     // If the data is null we don't send the chart.
                     return null;
                 }
-                builder.appendField("data", data);
+                builder.appendField("update", data);
             } catch (Throwable t) {
                 if (logErrors) {
                     errorLogger.accept("Failed to get data for custom chart with id " + chartId, t);

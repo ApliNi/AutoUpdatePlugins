@@ -25,7 +25,7 @@ public class TempDataManager {
     public TempDataManager(AutoUpdate plugin) {
         this.plugin = plugin;
         Map<String, TempData> map;
-        this.file = new File(new File(String.valueOf(plugin.getDataFolder())), "temp.json");
+        this.file = new File(plugin.getDataFolder(), "temp.json");
         try {
             if (!file.exists()) {
                 file.createNewFile();
@@ -33,6 +33,8 @@ public class TempDataManager {
             try (FileReader reader = new FileReader(file)) {
                 map = new Gson().fromJson(reader, new TypeToken<Map<String, TempData>>() {
                 }.getType());
+                if(map == null)
+                    map = new HashMap<>();
             }
         } catch (JsonIOException | JsonSyntaxException e) {
             map = new HashMap<>();

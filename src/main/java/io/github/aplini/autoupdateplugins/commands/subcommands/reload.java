@@ -2,24 +2,34 @@ package io.github.aplini.autoupdateplugins.commands.subcommands;
 
 import io.github.aplini.autoupdateplugins.AutoUpdate;
 import io.github.aplini.autoupdateplugins.commands.SubCommand;
+import io.github.aplini.autoupdateplugins.utils.Util;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
 public class reload extends SubCommand {
-    AutoUpdate p;
+    private final AutoUpdate plugin;
 
     public reload(AutoUpdate plugin) {
         this.name = "reload";
         this.permission = "aup.admin";
         this.usage = plugin.getMessageManager().getInstance().getCommands().getUsage().getRELOAD();
         this.description = plugin.getMessageManager().getInstance().getCommands().getDescription().getRELOAD();
-        p = plugin;
+        this.plugin = plugin;
     }
 
     @Override
     public void onCommand(Player player, String[] args) {
-        p.reloadConfig();
+        Util.Message(player, plugin.getMessageManager().getInstance().getReloadMessage());
+        if(plugin.getUpdateInstance().stop()) {
+            //todo player.sendMessage(plugin.getMessageManager().getInstance().);
+        }
+        plugin.getConfigManager().reload();
+        plugin.getMessageManager().reload();
+        plugin.getCommandManager().reload();
+        plugin.getUpdateDataManager().reload();
+        plugin.getTempDataManager().save();
+        Util.Message(player, plugin.getMessageManager().getInstance().getSuccessMessage());
     }
 
     @Override
@@ -29,7 +39,7 @@ public class reload extends SubCommand {
 
     @Override
     public void reloadMessage() {
-        this.usage = p.getMessageManager().getInstance().getCommands().getUsage().getRELOAD();
-        this.description = p.getMessageManager().getInstance().getCommands().getDescription().getRELOAD();
+        this.usage = plugin.getMessageManager().getInstance().getCommands().getUsage().getRELOAD();
+        this.description = plugin.getMessageManager().getInstance().getCommands().getDescription().getRELOAD();
     }
 }

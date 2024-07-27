@@ -1,8 +1,10 @@
 package io.github.aplini.autoupdateplugins.beans;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class UpdateItem {
     private String file = "";
     private String url = "";

@@ -5,9 +5,7 @@ import lombok.Setter;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @Setter
@@ -22,7 +20,7 @@ public class ConfigInstance {
     private String zipFileCheckPattern = "\\.(?:jar|zip)$";
     private boolean ignoreDuplicates = true;
     private boolean sslVerify = true;
-    private Proxy proxy = new Proxy(Proxy.Type.DIRECT, new InetSocketAddress("127.0.0.1", 7890));
+    private Proxy proxy = new Proxy();
     private ArrayList<String> logLevel = new ArrayList<>() {{
         this.add("DEBUG");
         this.add("MARK");
@@ -30,14 +28,32 @@ public class ConfigInstance {
         this.add("WARN");
         this.add("NET_WARN");
     }};
-    private Map<String, String> setRequestProperty = new HashMap<>() {{
-        this.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+    private LinkedList<Header> setRequestProperty = new LinkedList<>(){{
+        add(new Header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
     }};
     @Getter
     @Setter
     public static class Paths {
-        private String update = "./plugins/update/";
-        private String temp = "./plugins/AutoUpdatePlugins/temp/";
-        private String file = "./plugins/";
+        private String updatePath = "./plugins/update/";
+        private String tempPath = "./plugins/AutoUpdatePlugins/temp/";
+        private String filePath = "./plugins/";
+    }
+    @Getter
+    @Setter
+    public static class Proxy {
+        private java.net.Proxy.Type type = java.net.Proxy.Type.DIRECT;
+        private String host = "127.0.0.1";
+        private int port = 7890;
+    }
+    @Getter
+    @Setter
+    public static class Header {
+        private String name;
+        private String value;
+        public Header() {}
+        public Header(String k, String v) {
+            name = k;
+            value = v;
+        }
     }
 }

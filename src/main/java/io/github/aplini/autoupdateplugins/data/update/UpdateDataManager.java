@@ -1,38 +1,41 @@
-package io.github.aplini.autoupdateplugins.data.message;
+package io.github.aplini.autoupdateplugins.data.update;
 
 import com.google.common.io.ByteStreams;
 import io.github.aplini.autoupdateplugins.AutoUpdate;
+import io.github.aplini.autoupdateplugins.beans.UpdateItem;
 import lombok.Getter;
+import lombok.Setter;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.*;
+import java.util.LinkedList;
 import java.util.Objects;
 
-public class MessageManager {
+public class UpdateDataManager {
     private final File file;
     private final Yaml yaml;
     @Getter
-    private MessageInstance instance;
-
-    public MessageManager(String lang, AutoUpdate plugin) throws IOException {
-        file = new File(plugin.getDataFolder(), "message.yml");
+    private Instance instance;
+    public UpdateDataManager(String lang, AutoUpdate plugin) throws IOException {
+        file = new File(plugin.getDataFolder(), "update.yml");
         if (!file.exists()) {
             file.createNewFile();
             InputStream is;
             try {
-                is = plugin.getResource("messages/" + lang + ".yml");
+                is = plugin.getResource("update/" + lang + ".yml");
             } catch (NullPointerException e) {
-                is = plugin.getResource("messages/zh-CN.yml");
+                is = plugin.getResource("update/zh-CN.yml");
             }
             ByteStreams.copy(Objects.requireNonNull(is), new FileOutputStream(file));
         }
         yaml = new Yaml(new Constructor(
-                MessageInstance.class,
+                Instance.class,
                 new LoaderOptions()
         ), new Representer(new DumperOptions()) {{
             getPropertyUtils().setSkipMissingProperties(true);
@@ -50,10 +53,12 @@ public class MessageManager {
     }
 
     public void reload() {
-        try (FileReader reader = new FileReader(file)) {
-            this.instance = yaml.load(reader);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        FileConfiguration messageReader = YamlConfiguration.loadConfiguration(file);
+        instance = messageReader.getObject("", Instance.class, new Instance());
+    }
+    @Getter
+    @Setter
+    public static class Instance {
+        LinkedList<UpdateItem> list = new LinkedList<>();
     }
 }

@@ -14,11 +14,14 @@ import io.github.aplini.autoupdateplugins.beans.Modrinth.ModrinthFiles;
 import io.github.aplini.autoupdateplugins.beans.TempData;
 import io.github.aplini.autoupdateplugins.beans.UpdateItem;
 import io.github.aplini.autoupdateplugins.data.message.MessageManager;
+import io.github.aplini.autoupdateplugins.utils.Util;
 import lombok.Getter;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -29,9 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -43,21 +44,33 @@ import static io.github.aplini.autoupdateplugins.utils.Util.*;
 public class UpdateInstance {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     private final _scheduleTask task;
-
+    private final AutoUpdate plugin;
     public UpdateInstance(int delay, int interval, OkHttpClient client, List<UpdateItem> items, AutoUpdate plugin, int poolSize) {
+        this.plugin = plugin;
         task = new _scheduleTask(items, client, plugin, poolSize);
         scheduledExecutorService.scheduleAtFixedRate(task, delay, interval, java.util.concurrent.TimeUnit.SECONDS);
     }
 
-    public void stop() {
-        task.stop();
+    public boolean stop() {
         scheduledExecutorService.shutdownNow();
+        return task.stop() && scheduledExecutorService.isShutdown();
+    }
+    public void run(CommandSender sender) {
+        if(task.isUpdating.get()) {
+            Util.Message(sender, plugin.getMessageManager().getInstance().getUpdate().getErrStartRepeatedly());
+            return;
+        }
+        scheduledExecutorService.schedule(task,0, TimeUnit.SECONDS);
     }
 
-    private record _scheduleTask(List<UpdateItem> items, OkHttpClient client, AutoUpdate plugin,
-                                 int poolSize) implements Runnable {
-        static final AtomicBoolean isUpdating = new AtomicBoolean(false);
-        static final Vector<UpdateItem> processed = new Vector<>();
+    private class  _scheduleTask implements Runnable {
+        final List<UpdateItem> items;
+        final OkHttpClient client;
+        final AutoUpdate plugin;
+        final int poolSize;
+        final AtomicBoolean isUpdating = new AtomicBoolean(false);
+        @Getter
+        final ConcurrentHashMap<UpdateItem, Boolean> processed = new ConcurrentHashMap<>();
         static ExecutorService executor;
 
         private _scheduleTask(List<UpdateItem> items, OkHttpClient client, AutoUpdate plugin, int poolSize) {
@@ -70,7 +83,6 @@ public class UpdateInstance {
                     new ThreadFactoryBuilder().setNameFormat("Update-Downloader-").build()
             );
         }
-
         @Override
         public void run() {
             if (!isUpdating.get()) {
@@ -85,21 +97,35 @@ public class UpdateInstance {
             isUpdating.set(true);
             plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getChecking());
             for (UpdateItem item : items)
-                executor.submit(new _updateTask(item, client.newBuilder().build(), plugin.getMessageManager(), plugin));
+                executor.submit(new _updateTask(item, client.newBuilder().build(), plugin.getMessageManager(), plugin, processed));
         }
 
-        private void stop() {
+        private boolean stop() {
             executor.shutdownNow();
+            return executor.isShutdown();
         }
 
         private record _updateTask(UpdateItem item, OkHttpClient client,
-                                   MessageManager messageManager, AutoUpdate plugin) implements Runnable {
+                                   MessageManager messageManager, AutoUpdate plugin,
+                                   ConcurrentHashMap<UpdateItem, Boolean> processed
+                                   ) implements Runnable {
             @Override
             public void run() {
+                Thread.currentThread().setUncaughtExceptionHandler((t, e) -> {
+                    if(e instanceof InterruptedException){
+                        processed.put(item,false);
+                        return;
+                    }
+                    plugin.getLogger().log(Level.WARNING,String.format("[%s][%s]",
+                            Thread.currentThread().getName(),
+                            item.getFile()
+                    ) + e.getMessage(), e);
+                    processed.put(item,false);
+                });
                 String _updatePath, _filePath,_tempPath;
-                //Path Parser
                 if(!item.getFile().isEmpty() || !item.getUrl().isEmpty()) {
                     plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getListConfigErrMissing());
+                    processed.put(item,false);
                     return;
                 }
                 Matcher tempMatcher = Pattern.compile("(.*/|.*\\\\)([^/\\\\]+)$").matcher(item.getFile());
@@ -107,15 +133,15 @@ public class UpdateInstance {
                     getPath(tempMatcher.group(1));
                     _updatePath = item.getFile();
                     _filePath = item.getFile();
-                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTemp()) + tempMatcher.group(2);
+                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()) + tempMatcher.group(2);
                 } else if (item.getPath() != null) {
                     _updatePath = getPath(item.getPath()+item.getFile());
                     _filePath = _updatePath;
-                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTemp()) + item.getFile();
+                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()) + item.getFile();
                 } else {
-                    _updatePath = getPath(getNonNullString(item.getUpdatePath(),plugin.getConfigManager().getInstance().getPaths().getUpdate(),""));
-                    _filePath = getPath(getNonNullString(item.getFilePath(),plugin.getConfigManager().getInstance().getPaths().getFile(),""));
-                    _tempPath = getPath(getNonNullString(item.getTempPath(),plugin.getConfigManager().getInstance().getPaths().getTemp(),""));
+                    _updatePath = getPath(getNonNullString(item.getUpdatePath(),plugin.getConfigManager().getInstance().getPaths().getUpdatePath(),""));
+                    _filePath = getPath(getNonNullString(item.getFilePath(),plugin.getConfigManager().getInstance().getPaths().getFilePath(),""));
+                    _tempPath = getPath(getNonNullString(item.getTempPath(),plugin.getConfigManager().getInstance().getPaths().getTempPath(),""));
                 }
                 String url = item.getUrl().replaceAll("/$", "");
                 URLType type = getUrlType(url);
@@ -134,6 +160,7 @@ public class UpdateInstance {
                                                 .getInstance().getUpdate()
                                                 .getNoFileMatching()
                                 ));
+                        processed.put(item,false);
                         return;
                     }
                     try (Response resp = client.newCall(new Request.Builder().url(downloadURL).get().build()).execute()) {
@@ -168,6 +195,7 @@ public class UpdateInstance {
                                                 item.getFile(),
                                                 plugin.getMessageManager().getInstance().getUpdate().getZipFileCheck()
                                         ));
+                                processed.put(item,false);
                                 return;
                             }
                         }
@@ -194,6 +222,7 @@ public class UpdateInstance {
                             type.name(),
                             item.getFile()
                     ) + e.getMessage(), e);
+                    processed.put(item,false);
                     return;
                 }
                 if(plugin.getConfigManager().getInstance().isIgnoreDuplicates() && item.isIgnoreDuplicates()) {
@@ -209,6 +238,7 @@ public class UpdateInstance {
                                         type.name(),
                                         item.getFile(),plugin.getMessageManager().getInstance().getUpdate().getTempAlreadyLatest()
                             ));
+                            processed.put(item,false);
                             return;
                         }
                     } catch (IOException | NoSuchAlgorithmException ignore) {
@@ -219,6 +249,8 @@ public class UpdateInstance {
                         Files.move(Path.of(_tempPath), Path.of(_updatePath), StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         plugin.getLogger().log(Level.SEVERE, e.getMessage(), e);
+                        processed.put(item,false);
+                        return;
                     }
                     plugin.log(LogLevel.DEBUG,
                             String.format(
@@ -229,7 +261,7 @@ public class UpdateInstance {
                                             .replace("{old}",Long.toString(oldFileSize))
                                             .replace("{new}",Long.toString(newFileSize))
                             ));
-
+                    processed.put(item,true);
                 }
             }
 

@@ -23,7 +23,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     public CommandManager(AutoUpdate plugin) {
         this.plugin = plugin;
         subCommands.add(new reload(plugin));
-        subCommands.add(new update());
+        subCommands.add(new update(plugin));
     }
 
     @Override
