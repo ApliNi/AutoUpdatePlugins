@@ -2,6 +2,7 @@ package io.github.aplini.autoupdateplugins.commands;
 
 import io.github.aplini.autoupdateplugins.AutoUpdate;
 import io.github.aplini.autoupdateplugins.commands.subcommands.reload;
+import io.github.aplini.autoupdateplugins.commands.subcommands.stop;
 import io.github.aplini.autoupdateplugins.commands.subcommands.update;
 import io.github.aplini.autoupdateplugins.utils.Util;
 import org.bukkit.command.Command;
@@ -24,6 +25,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
         subCommands.add(new reload(plugin));
         subCommands.add(new update(plugin));
+        subCommands.add(new stop(plugin));
     }
 
     @Override
@@ -38,7 +40,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 if (!sender.hasPermission(subCommand.permission))
                     Util.Message(sender, plugin.getMessageManager().getInstance().getNoPermission());
                 else
-                    subCommand.onCommand((Player) sender, Arrays.copyOfRange(args, 1, args.length));
+                    subCommand.onCommand(sender, Arrays.copyOfRange(args, 1, args.length));
                 return true;
             }
         Util.Message(sender, plugin.getMessageManager().getInstance().getNoSuchCommand());
@@ -47,8 +49,6 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
-        if (!(sender instanceof Player))
-            return null;
         if (args.length == 1) {
             List<String> result = new ArrayList<>();
             for (SubCommand subCommand : subCommands)
@@ -58,7 +58,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         }
         for (SubCommand subCommand : subCommands)
             if (subCommand.name.equals(args[0]) && sender.hasPermission(subCommand.permission))
-                return subCommand.onTab((Player) sender, Arrays.copyOfRange(args, 1, args.length));
+                return subCommand.onTab(sender, Arrays.copyOfRange(args, 1, args.length));
         return null;
     }
 

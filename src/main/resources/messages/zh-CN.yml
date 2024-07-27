@@ -14,6 +14,8 @@ noPermission: "你没有权限使用这个命令."
 noSuchCommand: "没有该条指令."
 reloadMessage: "停止更新计划并重新加载数据!"
 successMessage: "成功!"
+stoppingMessage: "正在终止当前升级任务..."
+stoppedMessage: "已终止当前升级任务!"
 update:
   checking: "正在检查更新..."
   errDownload: "下载文件出错, 跳过此次更新."

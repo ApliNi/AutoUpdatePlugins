@@ -14,6 +14,8 @@ noPermission: You don't have permission to use this command.
 noSuchCommand: No such command.
 reloadMessage: Stopping Update Schedule & Reloading Data!
 successMessage: Success!
+stoppingMessage: Stopping Update Task...
+stoppedMessage: Update Task Stopped!
 update:
   checking: Checking for updates...
   errDownload: Error downloading file, skipping this update.

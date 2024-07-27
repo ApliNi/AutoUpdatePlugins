@@ -42,7 +42,7 @@ import static io.github.aplini.autoupdateplugins.utils.Util.*;
 
 @Getter
 public class UpdateInstance {
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(8);
     private final _scheduleTask task;
     private final AutoUpdate plugin;
     public UpdateInstance(int delay, int interval, OkHttpClient client, List<UpdateItem> items, AutoUpdate plugin, int poolSize) {
@@ -56,7 +56,7 @@ public class UpdateInstance {
         return task.stop() && scheduledExecutorService.isShutdown();
     }
     public void run(CommandSender sender) {
-        if(task.isUpdating.get()) {
+        if(task.checkIsRunning()) {
             Util.Message(sender, plugin.getMessageManager().getInstance().getUpdate().getErrStartRepeatedly());
             return;
         }
@@ -71,7 +71,8 @@ public class UpdateInstance {
         final AtomicBoolean isUpdating = new AtomicBoolean(false);
         @Getter
         final ConcurrentHashMap<UpdateItem, Boolean> processed = new ConcurrentHashMap<>();
-        static ExecutorService executor;
+        @Getter
+        final ExecutorService executor;
 
         private _scheduleTask(List<UpdateItem> items, OkHttpClient client, AutoUpdate plugin, int poolSize) {
             this.items = items;
@@ -80,24 +81,26 @@ public class UpdateInstance {
             this.poolSize = poolSize;
             executor = Executors.newFixedThreadPool(
                     poolSize,
-                    new ThreadFactoryBuilder().setNameFormat("Update-Downloader-").build()
+                    new ThreadFactoryBuilder().setNameFormat("Update-Downloader-%d").build()
             );
         }
         @Override
         public void run() {
-            if (!isUpdating.get()) {
-                if (processed.size() == items.size()) {
-                    processed.clear();
-                    isUpdating.set(false);
-                } else {
-                    plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getErrStartRepeatedly());
-                    return;
-                }
+            if (checkIsRunning()){
+                plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getErrStartRepeatedly());
+                return;
+            } else {
+                processed.clear();
+                isUpdating.set(false);
             }
+            plugin.log(LogLevel.DEBUG, plugin.getMessageManager().getInstance().getUpdate().getChecking());
             isUpdating.set(true);
-            plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getChecking());
             for (UpdateItem item : items)
                 executor.submit(new _updateTask(item, client.newBuilder().build(), plugin.getMessageManager(), plugin, processed));
+        }
+
+        private boolean checkIsRunning() {
+            return isUpdating.get() && processed.size() != items.size();
         }
 
         private boolean stop() {
@@ -116,15 +119,17 @@ public class UpdateInstance {
                         processed.put(item,false);
                         return;
                     }
-                    plugin.getLogger().log(Level.WARNING,String.format("[%s][%s]",
+                    plugin.getLogger().log(Level.WARNING,String.format("[%s][%s] ",
                             Thread.currentThread().getName(),
                             item.getFile()
                     ) + e.getMessage(), e);
                     processed.put(item,false);
                 });
                 String _updatePath, _filePath,_tempPath;
-                if(!item.getFile().isEmpty() || !item.getUrl().isEmpty()) {
-                    plugin.log(LogLevel.WARN, plugin.getMessageManager().getInstance().getUpdate().getListConfigErrMissing());
+                if(item.getFile().isEmpty() || item.getUrl().isEmpty()) {
+                    plugin.log(LogLevel.WARN, String.format("[%s][%s] %s",Thread.currentThread().getName(), item.getFile(),
+                            plugin.getMessageManager().getInstance().getUpdate().getListConfigErrMissing()
+                    ));
                     processed.put(item,false);
                     return;
                 }
@@ -133,18 +138,30 @@ public class UpdateInstance {
                     getPath(tempMatcher.group(1));
                     _updatePath = item.getFile();
                     _filePath = item.getFile();
-                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()) + tempMatcher.group(2);
+                    _tempPath = String.valueOf(new File(getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()), tempMatcher.group(2)));
                 } else if (item.getPath() != null) {
-                    _updatePath = getPath(item.getPath()+item.getFile());
+                    _updatePath = String.valueOf(new File(getPath(item.getPath()), item.getFile()));
                     _filePath = _updatePath;
-                    _tempPath = getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()) + item.getFile();
+                    _tempPath = String.valueOf(new File(getPath(plugin.getConfigManager().getInstance().getPaths().getTempPath()),item.getFile()));
                 } else {
-                    _updatePath = getPath(getNonNullString(item.getUpdatePath(),plugin.getConfigManager().getInstance().getPaths().getUpdatePath(),""));
-                    _filePath = getPath(getNonNullString(item.getFilePath(),plugin.getConfigManager().getInstance().getPaths().getFilePath(),""));
-                    _tempPath = getPath(getNonNullString(item.getTempPath(),plugin.getConfigManager().getInstance().getPaths().getTempPath(),""));
+                    _updatePath = String.valueOf(new File(getPath(getNonNullString(item.getUpdatePath(),plugin.getConfigManager().getInstance().getPaths().getUpdatePath(),"")), item.getFile()));
+                    _filePath = String.valueOf(new File(getPath(getNonNullString(item.getFilePath(),plugin.getConfigManager().getInstance().getPaths().getFilePath(),"")), item.getFile()));
+                    _tempPath = String.valueOf(new File(getPath(getNonNullString(item.getTempPath(),plugin.getConfigManager().getInstance().getPaths().getTempPath(),"")), item.getFile()));
                 }
                 String url = item.getUrl().replaceAll("/$", "");
                 URLType type = getUrlType(url);
+                plugin.log(
+                        LogLevel.DEBUG,
+                        String.format(
+                                "[%s][%s] %s",
+                                Thread.currentThread().getName(),
+                                item.getFile(),
+                                plugin.getMessageManager()
+                                        .getInstance().getUpdate()
+                                        .getSucceedGetType()
+                                        .replace("{type}", type.name())
+                        )
+                );
                 long newFileSize;
                 try {
                     String downloadURL = getDownloadUrl(type, url);
@@ -152,7 +169,7 @@ public class UpdateInstance {
                         plugin.log(
                                 LogLevel.WARN,
                                 String.format(
-                                        "[%s][%s][%s]%s",
+                                        "[%s][%s][%s] %s",
                                         Thread.currentThread().getName(),
                                         type.name(),
                                         item.getFile(),
@@ -162,12 +179,29 @@ public class UpdateInstance {
                                 ));
                         processed.put(item,false);
                         return;
+                    } else {
+                        plugin.log(
+                                LogLevel.DEBUG,
+                                String.format(
+                                        "[%s][%s][%s] %s",
+                                        Thread.currentThread().getName(),
+                                        type.name(),
+                                        item.getFile(),
+                                        plugin.getMessageManager()
+                                                .getInstance().getUpdate()
+                                                .getFindDownloadUrl().replace("{url}",downloadURL)
+                                ));
                     }
                     try (Response resp = client.newCall(new Request.Builder().url(downloadURL).get().build()).execute()) {
                         if (!resp.isSuccessful() || resp.body() == null) {
                             throw new IOException("Failed to download file: " + item.getFile());
                         }
-                        newFileSize = Long.getLong(resp.header("Content-Length"), -1);
+                        String s = resp.headers().get("content-length");
+                        if (s == null)
+                            newFileSize = -1;
+                        else
+                            newFileSize = Long.parseLong(s);
+                        new File(_tempPath).createNewFile();
                         try (
                                 InputStream is = resp.body().byteStream();
                                 OutputStream os = new FileOutputStream(_tempPath)
@@ -184,12 +218,12 @@ public class UpdateInstance {
                                         plugin.getConfigManager().getInstance().getZipFileCheckPattern()
                                 ).matcher(item.getFile()).find()
                         ) {
-                            if(isJARFileIntact(_tempPath)) {
+                            if(!isJARFileIntact(_tempPath)) {
                                 new File(_tempPath).delete();
                                 plugin.log(
                                         LogLevel.DEBUG,
                                         String.format(
-                                                "[%s][%s][%s]%s",
+                                                "[%s][%s][%s] %s",
                                                 Thread.currentThread().getName(),
                                                 type.name(),
                                                 item.getFile(),
@@ -217,7 +251,7 @@ public class UpdateInstance {
                         throw e;
                     }
                 } catch (IOException | NoSuchAlgorithmException e) {
-                    plugin.getLogger().log(Level.WARNING,String.format("[%s][%s][%s]",
+                    plugin.getLogger().log(Level.WARNING,String.format("[%s][%s][%s] ",
                             Thread.currentThread().getName(),
                             type.name(),
                             item.getFile()
@@ -233,7 +267,7 @@ public class UpdateInstance {
                             plugin.log(
                                     LogLevel.DEBUG,
                                     String.format(
-                                        "[%s][%s][%s]%s",
+                                        "[%s][%s][%s] %s",
                                         Thread.currentThread().getName(),
                                         type.name(),
                                         item.getFile(),plugin.getMessageManager().getInstance().getUpdate().getTempAlreadyLatest()
@@ -254,7 +288,7 @@ public class UpdateInstance {
                     }
                     plugin.log(LogLevel.DEBUG,
                             String.format(
-                                    "[%s][%s][%s]%s",
+                                    "[%s][%s][%s] %s",
                                     Thread.currentThread().getName(),
                                     type.name(),
                                     item.getFile(),plugin.getMessageManager().getInstance().getUpdate().getFileSizeDifference()
@@ -295,13 +329,6 @@ public class UpdateInstance {
                                 if(item.isGetPreRelease()) {
                                     for (GithubAsset asset : deSerialized[0].getAssets())
                                         if (item.getFileNamePattern().isEmpty() || Pattern.compile(item.getFileNamePattern()).matcher(asset.getName()).matches()) {
-                                            plugin.log(LogLevel.DEBUG, String.format(
-                                                    "[%s][%s]%s",
-                                                    Thread.currentThread().getName(),
-                                                    item.getFile(),
-                                                    plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                                            .replace("{url}", asset.getUrl())
-                                            ));
                                             return asset.getUrl();
                                         }
                                 } else {
@@ -309,97 +336,33 @@ public class UpdateInstance {
                                         if(!j.isPrerelease())
                                             for (GithubAsset asset : j.getAssets())
                                                 if (item.getFileNamePattern().isEmpty() || Pattern.compile(item.getFileNamePattern()).matcher(asset.getName()).matches()) {
-                                                    plugin.log(LogLevel.DEBUG, String.format(
-                                                            "[%s][%s]%s",
-                                                            Thread.currentThread().getName(),
-                                                            item.getFile(),
-                                                            plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                                                    .replace("{url}", asset.getUrl())
-                                                    ));
                                                     return asset.getUrl();
                                                 }
                                     }
                                 }
-                                plugin.log(LogLevel.WARN, String.format(
-                                        "[%s][%s]%s",
-                                        Thread.currentThread().getName(),
-                                        item.getFile(),
-                                        plugin.getMessageManager().getInstance().getUpdate().getNoFileMatching()
-                                ));
                                 return null;
                             }
                         }
-                        break;
                     }
                     case Jenkins -> {
                         try (Response resp = client.newCall(new Request.Builder().head().url(
                                 url + "/lastSuccessfulBuild/api/json"
                         ).build()).execute()) {
-                            if(resp.code() != 200 || resp.body() == null) {
-                                plugin.log(
-                                        LogLevel.WARN,
-                                        String.format(
-                                                "[%s][%s][%s]%s",
-                                                Thread.currentThread().getName(),
-                                                type.name(),
-                                                item.getFile(),
-                                                plugin.getMessageManager()
-                                                        .getInstance().getUpdate()
-                                                        .getResourceNotFound()
-                                        ));
+                            if(resp.code() != 200 || resp.body() == null)
                                 return null;
-                            }
                             JenkinsAPI deSerialized = new Gson().fromJson(Objects.requireNonNull(resp.body()).string(), JenkinsAPI.class);
                             for (JenkinsArtifact artifact : deSerialized.getArtifacts()) {
                                 if (item.getFileNamePattern().isEmpty() || Pattern.compile(item.getFileNamePattern()).matcher(artifact.getFileName()).matches()) {
-                                    plugin.log(LogLevel.DEBUG, String.format(
-                                            "[%s][%s]%s",
-                                            Thread.currentThread().getName(),
-                                            item.getFile(),
-                                            plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                                    .replace("{url}", url +"/lastSuccessfulBuild/artifact/"+ artifact.getRelativePath())
-                                    ));
                                     return url +"/lastSuccessfulBuild/artifact/"+ artifact.getRelativePath();
                                 }
                             }
-                            plugin.log(
-                                    LogLevel.WARN,
-                                    String.format(
-                                            "[%s][%s][%s]%s",
-                                            Thread.currentThread().getName(),
-                                            type.name(),
-                                            item.getFile(),
-                                            plugin.getMessageManager()
-                                                    .getInstance().getUpdate()
-                                                    .getNoFileMatching()
-                                    ));
                             return null;
                         }
                     }
                     case Spigot -> {
                         Matcher matcher = Pattern.compile("([0-9]+)$").matcher(url);
-                        if(matcher.find()){
-                            String dUrl = "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
-                            plugin.log(LogLevel.DEBUG, String.format(
-                                    "[%s][%s]%s",
-                                    Thread.currentThread().getName(),
-                                    item.getFile(),
-                                    plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                            .replace("{url}", dUrl)
-                            ));
-                            return dUrl;
-                        }
-                        plugin.log(
-                                LogLevel.WARN,
-                                String.format(
-                                        "[%s][%s][%s]%s",
-                                        Thread.currentThread().getName(),
-                                        type.name(),
-                                        item.getFile(),
-                                        plugin.getMessageManager()
-                                                .getInstance().getUpdate()
-                                                .getResourceNotFound()
-                                ));
+                        if(matcher.find())
+                            return "https://api.spiget.org/v2/resources/"+ matcher.group(1) +"/download";
                         return null;
                     }
                     case Modrinth -> {
@@ -408,126 +371,42 @@ public class UpdateInstance {
                             try (Response resp = client.newCall(new Request.Builder().head().url(
                                     "https://api.modrinth.com/v2/project"+ matcher.group(0) +"/version"
                             ).build()).execute()) {
-                                if (resp.code() != 200 || resp.body() == null) {
-                                    plugin.log(
-                                            LogLevel.WARN,
-                                            String.format(
-                                                    "[%s][%s][%s]%s",
-                                                    Thread.currentThread().getName(),
-                                                    type.name(),
-                                                    item.getFile(),
-                                                    plugin.getMessageManager()
-                                                            .getInstance().getUpdate()
-                                                            .getResourceNotFound()
-                                            ));
+                                if (resp.code() != 200 || resp.body() == null)
                                     return null;
-                                }
                                 ModrinthAPI deSerialized = new Gson().fromJson(Objects.requireNonNull(resp.body()).string(), ModrinthAPI.class);
                                 for (ModrinthFiles file : deSerialized.getFiles()) {
                                     if(file.getFilename().isEmpty() || Pattern.compile(item.getFileNamePattern()).matcher(file.getFilename()).matches()){
-                                        plugin.log(LogLevel.DEBUG, String.format(
-                                                "[%s][%s]%s",
-                                                Thread.currentThread().getName(),
-                                                item.getFile(),
-                                                plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                                        .replace("{url}", file.getUrl())
-                                        ));
                                         return file.getUrl();
                                     }
                                 }
-                                plugin.log(
-                                        LogLevel.WARN,
-                                        String.format(
-                                                "[%s][%s][%s]%s",
-                                                Thread.currentThread().getName(),
-                                                type.name(),
-                                                item.getFile(),
-                                                plugin.getMessageManager()
-                                                        .getInstance().getUpdate()
-                                                        .getNoFileMatching()
-                                        ));
                                 return null;
                             }
                         }
-                        plugin.log(
-                                LogLevel.WARN,
-                                String.format(
-                                        "[%s][%s][%s]%s",
-                                        Thread.currentThread().getName(),
-                                        type.name(),
-                                        item.getFile(),
-                                        plugin.getMessageManager()
-                                                .getInstance().getUpdate()
-                                                .getResourceNotFound()
-                                ));
                         return null;
                     }
                     case Bukkit -> {
-                        plugin.log(LogLevel.DEBUG, String.format(
-                                "[%s][%s]%s",
-                                Thread.currentThread().getName(),
-                                item.getFile(),
-                                plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                        .replace("{url}", url +"/files/latest")
-                        ));
                         return url +"/files/latest";
                     }
                     case GuiZhan -> {
                         Matcher matcher = Pattern.compile("/([^/]+)/([^/]+)/([^/]+)$").matcher(url);
-                        plugin.log(LogLevel.DEBUG, String.format(
-                                "[%s][%s]%s",
-                                Thread.currentThread().getName(),
-                                item.getFile(),
-                                plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                        .replace("{url}", "https://builds.guizhanss.com/api/download"+ matcher.group(0) +"/latest")
-                        ));
-                        return "https://builds.guizhanss.com/api/download"+ matcher.group(0) +"/latest";
+                        if(matcher.find()) {
+                            return "https://builds.guizhanss.com/api/download" + matcher.group(0) + "/latest";
+                        }
                     }
                     case MineBBS -> {
-                        plugin.log(LogLevel.DEBUG, String.format(
-                                "[%s][%s]%s",
-                                Thread.currentThread().getName(),
-                                item.getFile(),
-                                plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                        .replace("{url}", url + "/download")
-                        ));
                         return url + "/download";
                     }
                     case CurseForge -> {
                         try (Response htmlResp = client.newCall(new Request.Builder().head().url(url).build()).execute()) {
-                            if (htmlResp.code() != 200 || htmlResp.body() == null) {
-                                plugin.log(
-                                        LogLevel.WARN,
-                                        String.format(
-                                                "[%s][%s][%s]%s",
-                                                Thread.currentThread().getName(),
-                                                type.name(),
-                                                item.getFile(),
-                                                plugin.getMessageManager()
-                                                        .getInstance().getUpdate()
-                                                        .getResourceNotFound()
-                                        ));
+                            if (htmlResp.code() != 200 || htmlResp.body() == null)
                                 return null;
-                            }
                             String[] lines = htmlResp.body().string().split("<a");
                             for(String li : lines){
                                 Matcher matcher = Pattern.compile("data-project-id=\"([0-9]+)\"").matcher(li);
                                 if(matcher.find()) {
                                     try (Response resp = client.newCall(new Request.Builder().head().url("https://api.curseforge.com/servermods/files?projectIds="+ matcher.group(1)).build()).execute()) {
-                                        if (resp.code() != 200 || resp.body() == null) {
-                                            plugin.log(
-                                                    LogLevel.WARN,
-                                                    String.format(
-                                                            "[%s][%s][%s]%s",
-                                                            Thread.currentThread().getName(),
-                                                            type.name(),
-                                                            item.getFile(),
-                                                            plugin.getMessageManager()
-                                                                    .getInstance().getUpdate()
-                                                                    .getResourceNotFound()
-                                                    ));
+                                        if (resp.code() != 200 || resp.body() == null)
                                             return null;
-                                        }
                                         CurseForgeData[] data = new Gson().fromJson(resp.body().string(), CurseForgeData[].class);
                                         String durl = data[data.length - 1].getFileUrl();
                                         if(!item.isGetPreRelease()) {
@@ -538,29 +417,11 @@ public class UpdateInstance {
                                                 }
                                             }
                                         }
-                                        plugin.log(LogLevel.DEBUG, String.format(
-                                                "[%s][%s]%s",
-                                                Thread.currentThread().getName(),
-                                                item.getFile(),
-                                                plugin.getMessageManager().getInstance().getUpdate().getFindDownloadUrl()
-                                                        .replace("{url}", durl)
-                                        ));
                                         return durl;
                                     }
                                 }
                             }
                         }
-                        plugin.log(
-                                LogLevel.WARN,
-                                String.format(
-                                        "[%s][%s][%s]%s",
-                                        Thread.currentThread().getName(),
-                                        type.name(),
-                                        item.getFile(),
-                                        plugin.getMessageManager()
-                                                .getInstance().getUpdate()
-                                                .getNoFileMatching()
-                                ));
                         return null;
                     }
                     case Plain -> {
@@ -592,18 +453,6 @@ public class UpdateInstance {
                         plugin.getLogger().log(Level.SEVERE,e.getMessage(),e);
                     }
                 }
-                plugin.log(
-                        LogLevel.DEBUG,
-                        String.format(
-                                "[%s][%s]%s",
-                                Thread.currentThread().getName(),
-                                item.getFile(),
-                                plugin.getMessageManager()
-                                        .getInstance().getUpdate()
-                                        .getSucceedGetType()
-                                        .replace("{type}", type.name())
-                        )
-                );
                 return type;
             }
 

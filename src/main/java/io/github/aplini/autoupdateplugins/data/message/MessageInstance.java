@@ -11,6 +11,8 @@ public class MessageInstance {
     private String SuccessMessage = "Success!";
     private String FailedMessage = "Something went wrong. Please Check console.";
     private String ReloadMessage = "Stopping Update Schedule & Reloading Data!";
+    private String StoppedMessage = "Update Task Stopped!";
+    private String StoppingMessage = "Stopping Update Task...";
     private SubCommands commands = new SubCommands();
     private Update update = new Update();
     @Getter

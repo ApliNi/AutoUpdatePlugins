@@ -2,8 +2,8 @@ package io.github.aplini.autoupdateplugins.commands.subcommands;
 
 import io.github.aplini.autoupdateplugins.AutoUpdate;
 import io.github.aplini.autoupdateplugins.commands.SubCommand;
-import io.github.aplini.autoupdateplugins.utils.Util;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
+
 
 import java.util.List;
 
@@ -17,12 +17,12 @@ public class update extends SubCommand {
         this.plugin = plugin;
     }
     @Override
-    public void onCommand(Player player, String[] args) {
-        plugin.getUpdateInstance().run(player);
+    public void onCommand(CommandSender sender, String[] args) {
+        plugin.getUpdateInstance().run(sender);
     }
 
     @Override
-    public List<String> onTab(Player player, String[] args) {
+    public List<String> onTab(CommandSender sender, String[] args) {
         return null;
     }
 

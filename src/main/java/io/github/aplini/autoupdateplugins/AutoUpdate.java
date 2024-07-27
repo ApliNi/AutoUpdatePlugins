@@ -7,18 +7,16 @@ import io.github.aplini.autoupdateplugins.data.message.MessageManager;
 import io.github.aplini.autoupdateplugins.data.temp.TempDataManager;
 import io.github.aplini.autoupdateplugins.data.update.UpdateDataManager;
 import io.github.aplini.autoupdateplugins.update.UpdateInstance;
+import io.github.aplini.autoupdateplugins.utils.Util;
 import lombok.Getter;
-import okhttp3.Headers;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Response;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -34,10 +32,10 @@ public class AutoUpdate extends JavaPlugin {
     @Getter
     private final UpdateDataManager updateDataManager;
     @Getter
+    @Setter
     private UpdateInstance updateInstance;
     {
         try {
-
             messageManager = new MessageManager(configManager.getInstance().getLanguage(), this);
             updateDataManager = new UpdateDataManager(configManager.getInstance().getLanguage(), this);
             commandManager = new CommandManager(this);
@@ -49,34 +47,21 @@ public class AutoUpdate extends JavaPlugin {
         if(p.getType() != Proxy.Type.DIRECT) {
             proxy = new Proxy(p.getType(), new InetSocketAddress(p.getHost(), p.getPort()));
         }
-        updateInstance = new UpdateInstance(
+        updateInstance = Util.getUpdateInstance(
                 configManager.getInstance().getStartupDelay(),
                 configManager.getInstance().getStartupCycle(),
-                new OkHttpClient.Builder()
-                        .proxy(proxy)
-                        .addInterceptor(new Interceptor() {
-                            @NotNull
-                            @Override
-                            public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
-                                Headers.Builder headers = new Headers.Builder();
-                                for (ConfigInstance.Header header : configManager.getInstance().getSetRequestProperty())
-                                    headers.add(header.getName(),header.getValue());
-                                return chain.proceed(
-                                        chain.request().newBuilder()
-                                                .headers(headers.build())
-                                                .build()
-                                );
-                            }
-                        })
-                        .build(),
-                updateDataManager.getInstance().getList(),
+                proxy,
+                configManager.getInstance().getSetRequestProperty(),
                 this,
-                configManager.getInstance().getDownloadThreadCount()
-                );
+                updateDataManager.getInstance().getList(),
+                configManager.getInstance().getDownloadThreadCount(),
+                configManager.getInstance().isSslVerify());
     }
 
     @Override
     public void onEnable() {
+        Metrics metrics = new Metrics(this, 20629);
+        metrics.addCustomChart(new Metrics.SingleLineChart("Plugins", () -> ((List<?>) Objects.requireNonNull(getConfig().get("list"))).size()));
         Objects.requireNonNull(Bukkit.getPluginCommand("aup")).setExecutor(commandManager);
     }
 
@@ -84,6 +69,7 @@ public class AutoUpdate extends JavaPlugin {
     public void onDisable() {
         configManager.save();
         tempDataManager.save();
+        updateInstance.stop();
     }
 
     public void log(LogLevel level, String text) {
